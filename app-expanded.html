@@ -3320,8 +3320,19 @@
 
             const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
             const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
+            const pagamentosCobranca = JSON.parse(localStorage.getItem('pagamentos') || '[]');
             const hoje = new Date(); hoje.setHours(0,0,0,0);
-            const cobrancasPendentes = emprestimos.filter(e => e.vencimento && new Date(e.vencimento) < hoje);
+            const pagMapCobranca = {};
+            pagamentosCobranca.forEach(function(p) {
+                if (!pagMapCobranca[p.emprestimo_id]) pagMapCobranca[p.emprestimo_id] = 0;
+                pagMapCobranca[p.emprestimo_id] += parseFloat(p.valor) || 0;
+            });
+            const cobrancasPendentes = emprestimos.filter(function(e) {
+                if (!e.vencimento) return false;
+                if (new Date(e.vencimento + 'T00:00:00') >= hoje) return false;
+                const totalPago = pagMapCobranca[e.id] || 0;
+                return totalPago < parseFloat(e.valor || 0);
+            });
 
             const alerta = document.getElementById('alerta-cobrancas');
             const alertaTexto = document.getElementById('alerta-cobrancas-texto');
@@ -3341,7 +3352,7 @@
 
             let html = '';
             cobrancasPendentes.forEach(emp => {
-                const diasAtrasado = Math.floor((hoje - new Date(emp.vencimento)) / (1000 * 60 * 60 * 24));
+                const diasAtrasado = Math.floor((hoje - new Date(emp.vencimento + 'T00:00:00')) / (1000 * 60 * 60 * 24));
                 const cliente = clientes.find(c => c.nome === emp.cliente);
                 const email = cliente?.email || '';
                 const tel = cliente?.whatsapp || cliente?.telefone || '';
