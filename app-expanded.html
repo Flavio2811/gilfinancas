@@ -2709,6 +2709,7 @@
                 const token = localStorage.getItem('token');
                 if (token) {
                     document.getElementById('login-page').classList.add('hidden');
+                    document.getElementById('app-page').classList.remove('hidden');
                     showPage('dashboard');
                     setTimeout(loadChartJS, 200);
                 }
@@ -3509,6 +3510,7 @@
                     document.getElementById('profile-whatsapp').value = user.whatsapp || '';
                     document.getElementById('profile-created').textContent = new Date().toLocaleDateString('pt-BR');
                     document.getElementById('login-page').classList.add('hidden');
+                    document.getElementById('app-page').classList.remove('hidden');
                     showPage('dashboard');
                 }
                 // Se não tem token, login-page já está visível por padrão no HTML
