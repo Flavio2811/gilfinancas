@@ -29,6 +29,9 @@ app.use(express.static(path.dirname(__filename)));
 
 app.get("/", (req, res) => {
     try {
+        res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.set("Pragma", "no-cache");
+        res.set("Expires", "0");
         res.sendFile(path.join(__dirname, "app-expanded.html"));
     } catch (err) {
         res.status(200).send("<h1>Gil.Finanças PRO</h1><p>Servidor funcionando!</p>");
