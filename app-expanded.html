@@ -1625,10 +1625,11 @@
                             <p id="statusImportacao" style="margin-top: 10px; font-size: 14px; color: var(--text-secondary);"></p>
                         </div>
                         <div style="border-top: 1px solid var(--border); padding-top: 20px;">
-                            <label style="display: block; margin-bottom: 10px; font-weight: 600;">📥 Exportar Planilha (com todos os clientes)</label>
-                            <button onclick="exportarClientesExcel()" style="padding: 12px 20px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 10px;">📈 Exportar como Excel</button>
-                            <button onclick="exportarClientesCSV()" style="padding: 12px 20px; background: #2D9E7B; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 10px;">📊 Exportar como CSV</button>
-                            <button onclick="exportarClientesJSON()" style="padding: 12px 20px; background: #10B981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">💾 Exportar como JSON</button>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600;">📤 Exportar Planilha (clientes + empréstimos + pagamentos)</label>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">Excel exporta 3 abas separadas. CSV exporta uma linha por empréstimo. JSON exporta backup completo (pode ser reimportado).</p>
+                            <button onclick="exportarTudoExcel()" style="padding: 12px 20px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 10px; margin-bottom: 8px;">📈 Exportar como Excel</button>
+                            <button onclick="exportarTudoCSV()" style="padding: 12px 20px; background: #2D9E7B; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-right: 10px; margin-bottom: 8px;">📊 Exportar como CSV</button>
+                            <button onclick="exportarTudoJSON()" style="padding: 12px 20px; background: #10B981; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 8px;">💾 Exportar como JSON</button>
                             <p id="statusExportacao" style="margin-top: 10px; font-size: 14px; color: var(--text-secondary);"></p>
                         </div>
                     </div>
@@ -2758,9 +2759,46 @@
                 reader.onload = function(e) {
                     try {
                         const data = JSON.parse(e.target.result);
-                        if (Array.isArray(data) && data.length > 0) {
+                        if (data && !Array.isArray(data) && (data.clientes || data.emprestimos || data.pagamentos)) {
+                            var cliCount = 0, empCount = 0, pagCount = 0;
+                            if (Array.isArray(data.clientes) && data.clientes.length > 0) {
+                                var clientesAtuais = JSON.parse(localStorage.getItem('clientes') || '[]');
+                                data.clientes.forEach(function(novo) {
+                                    if (!novo.nome) return;
+                                    var dup = clientesAtuais.find(function(c) { return c.nome === novo.nome || (novo.email && c.email === novo.email); });
+                                    if (!dup) { clientesAtuais.push(novo); cliCount++; }
+                                });
+                                localStorage.setItem('clientes', JSON.stringify(clientesAtuais));
+                                renderizarClientes();
+                            }
+                            if (Array.isArray(data.emprestimos) && data.emprestimos.length > 0) {
+                                var empAtuais = JSON.parse(localStorage.getItem('emprestimos') || '[]');
+                                data.emprestimos.forEach(function(novo) {
+                                    var dup = empAtuais.find(function(e) { return e.cliente === novo.cliente && parseFloat(e.valor) === parseFloat(novo.valor) && e.vencimento === novo.vencimento; });
+                                    if (!dup) { empAtuais.push(novo); empCount++; }
+                                });
+                                localStorage.setItem('emprestimos', JSON.stringify(empAtuais));
+                                renderizarEmprestimos();
+                            }
+                            if (Array.isArray(data.pagamentos) && data.pagamentos.length > 0) {
+                                var pagAtuais = JSON.parse(localStorage.getItem('pagamentos') || '[]');
+                                data.pagamentos.forEach(function(novo) {
+                                    var dup = pagAtuais.find(function(p) { return p.emprestimo_id == novo.emprestimo_id && p.data_pagamento === novo.data_pagamento && parseFloat(p.valor) === parseFloat(novo.valor); });
+                                    if (!dup) { pagAtuais.push(novo); pagCount++; }
+                                });
+                                localStorage.setItem('pagamentos', JSON.stringify(pagAtuais));
+                            }
+                            atualizarEstatisticas();
+                            if (typeof updateCharts === 'function') updateCharts();
+                            var partes = [];
+                            if (cliCount > 0) partes.push(cliCount + ' cliente(s)');
+                            if (empCount > 0) partes.push(empCount + ' empréstimo(s)');
+                            if (pagCount > 0) partes.push(pagCount + ' pagamento(s)');
+                            statusDiv.textContent = partes.length > 0 ? '✅ Importado: ' + partes.join(', ') + '!' : '⚠️ Nenhum dado novo encontrado.';
+                            statusDiv.style.color = partes.length > 0 ? 'var(--success)' : 'var(--warning)';
+                            fileInput.value = '';
+                        } else if (Array.isArray(data) && data.length > 0) {
                             const keys = Object.keys(data[0]).map(function(k) { return k.toLowerCase(); });
-                            const header = keys;
                             const rows = [keys].concat(data.map(function(obj) {
                                 return keys.map(function(k) {
                                     const origKey = Object.keys(obj).find(function(ok) { return ok.toLowerCase() === k; });
@@ -2821,70 +2859,111 @@
             }
         }
 
-        function exportarClientesCSV() {
+        function exportarTudoCSV() {
             const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
+            const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
             const statusDiv = document.getElementById('statusExportacao');
 
-            if (clientes.length === 0) {
-                statusDiv.textContent = '⚠️ Nenhum cliente para exportar!';
+            if (clientes.length === 0 && emprestimos.length === 0) {
+                statusDiv.textContent = '⚠️ Nenhum dado para exportar!';
                 statusDiv.style.color = 'var(--warning)';
                 return;
             }
 
-            let csv = 'Nome,Email,Telefone,WhatsApp,Endereço,Status\n';
-            clientes.forEach(cliente => {
-                csv += `"${cliente.nome}","${cliente.email}","${cliente.telefone}","${cliente.whatsapp}","${cliente.endereco}","${cliente.status}"\n`;
-            });
+            const esc = function(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; };
+            let csv = 'Nome,Email,Telefone,WhatsApp,Endereço,Status,Valor,Taxa,Tipo,Vencimento,Data\n';
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            if (emprestimos.length > 0) {
+                emprestimos.forEach(function(emp) {
+                    const cli = clientes.find(function(c) { return c.nome === emp.cliente; }) || {};
+                    csv += [
+                        esc(emp.cliente),
+                        esc(cli.email || ''),
+                        esc(cli.telefone || ''),
+                        esc(cli.whatsapp || ''),
+                        esc(cli.endereco || ''),
+                        esc(cli.status || 'Ativo'),
+                        esc(emp.valor || ''),
+                        esc(emp.taxa || ''),
+                        esc(emp.tipo || 'simples'),
+                        esc(emp.vencimento || ''),
+                        esc(emp.data || '')
+                    ].join(',') + '\n';
+                });
+            } else {
+                clientes.forEach(function(c) {
+                    csv += [esc(c.nome), esc(c.email), esc(c.telefone), esc(c.whatsapp), esc(c.endereco), esc(c.status || 'Ativo'), '','','','',''].join(',') + '\n';
+                });
+            }
+
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('href', URL.createObjectURL(blob));
+            link.setAttribute('download', 'gilfinancas_' + new Date().toISOString().split('T')[0] + '.csv');
             link.click();
-
-            statusDiv.textContent = `✅ Planilha exportada com ${clientes.length} cliente(s)!`;
+            statusDiv.textContent = '✅ CSV exportado com ' + clientes.length + ' cliente(s) e ' + emprestimos.length + ' empréstimo(s)!';
             statusDiv.style.color = 'var(--success)';
         }
 
-        function exportarClientesJSON() {
+        function exportarTudoJSON() {
             const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
+            const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
+            const pagamentos = JSON.parse(localStorage.getItem('pagamentos') || '[]');
             const statusDiv = document.getElementById('statusExportacao');
 
-            if (clientes.length === 0) {
-                statusDiv.textContent = '⚠️ Nenhum cliente para exportar!';
+            if (clientes.length === 0 && emprestimos.length === 0) {
+                statusDiv.textContent = '⚠️ Nenhum dado para exportar!';
                 statusDiv.style.color = 'var(--warning)';
                 return;
             }
 
-            const jsonData = JSON.stringify(clientes, null, 2);
-            const blob = new Blob([jsonData], { type: 'application/json;charset=utf-8;' });
+            const backup = { clientes: clientes, emprestimos: emprestimos, pagamentos: pagamentos };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8;' });
             const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `clientes_${new Date().toISOString().split('T')[0]}.json`);
+            link.setAttribute('href', URL.createObjectURL(blob));
+            link.setAttribute('download', 'gilfinancas_backup_' + new Date().toISOString().split('T')[0] + '.json');
             link.click();
-
-            statusDiv.textContent = `✅ Arquivo JSON exportado com ${clientes.length} cliente(s)!`;
+            statusDiv.textContent = '✅ Backup JSON exportado: ' + clientes.length + ' cliente(s), ' + emprestimos.length + ' empréstimo(s), ' + pagamentos.length + ' pagamento(s)!';
             statusDiv.style.color = 'var(--success)';
         }
 
-        function exportarClientesExcel() {
+        function exportarTudoExcel() {
             const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
+            const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
+            const pagamentos = JSON.parse(localStorage.getItem('pagamentos') || '[]');
             const statusDiv = document.getElementById('statusExportacao');
 
-            if (clientes.length === 0) {
-                statusDiv.textContent = '⚠️ Nenhum cliente para exportar!';
+            if (typeof XLSX === 'undefined') {
+                statusDiv.textContent = '❌ Biblioteca Excel não carregada. Recarregue a página.';
+                statusDiv.style.color = 'var(--danger)';
+                return;
+            }
+            if (clientes.length === 0 && emprestimos.length === 0) {
+                statusDiv.textContent = '⚠️ Nenhum dado para exportar!';
                 statusDiv.style.color = 'var(--warning)';
                 return;
             }
 
-            const ws = XLSX.utils.json_to_sheet(clientes);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Clientes');
-            XLSX.writeFile(wb, `clientes_${new Date().toISOString().split('T')[0]}.xlsx`);
 
-            statusDiv.textContent = `✅ Arquivo Excel exportado com ${clientes.length} cliente(s)!`;
+            const clientesData = clientes.map(function(c) {
+                return { Nome: c.nome, Email: c.email, Telefone: c.telefone, WhatsApp: c.whatsapp, 'Endereço': c.endereco, Status: c.status || 'Ativo' };
+            });
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clientesData.length ? clientesData : [{}]), 'Clientes');
+
+            const emprestimosData = emprestimos.map(function(e) {
+                return { Cliente: e.cliente, Valor: e.valor, Taxa: e.taxa, Tipo: e.tipo, Vencimento: e.vencimento, Data: e.data, 'Juros Acumulados': e.juros_acumulados || 0 };
+            });
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(emprestimosData.length ? emprestimosData : [{}]), 'Empréstimos');
+
+            const pagamentosData = pagamentos.map(function(p) {
+                const emp = emprestimos.find(function(e) { return e.id == p.emprestimo_id; });
+                return { Cliente: emp ? emp.cliente : '', 'ID Empréstimo': p.emprestimo_id, Valor: p.valor, 'Data Pagamento': p.data_pagamento, Observação: p.observacao || '' };
+            });
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pagamentosData.length ? pagamentosData : [{}]), 'Pagamentos');
+
+            XLSX.writeFile(wb, 'gilfinancas_' + new Date().toISOString().split('T')[0] + '.xlsx');
+            statusDiv.textContent = '✅ Excel exportado: ' + clientes.length + ' cliente(s), ' + emprestimos.length + ' empréstimo(s), ' + pagamentos.length + ' pagamento(s)!';
             statusDiv.style.color = 'var(--success)';
         }
 
