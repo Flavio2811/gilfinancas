@@ -1097,7 +1097,7 @@
                         <div class="stat-icon green">💵</div>
                         <div>
                             <div class="stat-label">Total a Receber</div>
-                            <div class="stat-value" id="total-receber">R$ 47.920</div>
+                            <div class="stat-value" id="total-receber">R$ 0,00</div>
                             <div class="stat-change">+6,4% vs. mês anterior</div>
                         </div>
                     </div>
@@ -1105,7 +1105,7 @@
                         <div class="stat-icon orange">⏰</div>
                         <div>
                             <div class="stat-label">Em Atraso</div>
-                            <div class="stat-value" id="total-atraso">R$ 2.840</div>
+                            <div class="stat-value" id="total-atraso">R$ 0,00</div>
                             <div class="stat-change">⚠️ Ação necessária</div>
                         </div>
                     </div>
@@ -2134,15 +2134,31 @@
 
             const totalClientes = clientes.length;
             const totalEmprestado = emprestimos.reduce((sum, e) => sum + (parseFloat(e.valor) || 0), 0);
-            const totalRecebido = pagamentos.reduce((sum, p) => sum + (parseFloat(p.valor) || 0), 0);
+            const totalPago = pagamentos.reduce((sum, p) => sum + (parseFloat(p.valor) || 0), 0);
+            const totalAReceber = Math.max(0, totalEmprestado - totalPago);
+
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            const totalEmAtraso = emprestimos
+                .filter(e => {
+                    const venc = new Date(e.vencimento);
+                    return venc < hoje && !pagamentos.find(p => p.emprestimo_id === e.id);
+                })
+                .reduce((sum, e) => sum + (parseFloat(e.valor) || 0), 0);
+
+            const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             const elClientes = document.getElementById('total-clientes');
             const elCapital = document.getElementById('total-capital');
+            const elReceber = document.getElementById('total-receber');
+            const elAtraso = document.getElementById('total-atraso');
             const elRecebido = document.getElementById('cliente-total-recebido');
 
             if (elClientes) elClientes.textContent = totalClientes;
-            if (elCapital) elCapital.textContent = 'R$ ' + totalEmprestado.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            if (elRecebido) elRecebido.textContent = 'R$ ' + totalRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (elCapital) elCapital.textContent = fmt(totalEmprestado);
+            if (elReceber) elReceber.textContent = fmt(totalAReceber);
+            if (elAtraso) elAtraso.textContent = fmt(totalEmAtraso);
+            if (elRecebido) elRecebido.textContent = fmt(totalPago);
         }
 
         function updateCharts() {
