@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "test-server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "test-server.js"
+      ],
+      "port": 5000
+    }
+  ]
+}

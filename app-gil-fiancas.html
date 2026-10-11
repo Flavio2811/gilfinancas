@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Gil.Finanças - Controle Financeiro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #1B7F5E;
+            --primary-light: #2D9E7B;
+            --dark: #0F172A;
+            --light: #F8FAFC;
+            --accent: #FF9F1C;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --border: #E5E7EB;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #F3F4F6;
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            font-size: 18px;
+            color: white;
+            gap: 15px;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 25px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .logo {
+            padding: 0 20px;
+            margin-bottom: 35px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            color: var(--text-primary);
+        }
+
+        .menu-section {
+            margin-bottom: 30px;
+        }
+
+        .menu-section-title {
+            padding: 0 20px;
+            margin-bottom: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin: 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background: #F8F9FA;
+            color: var(--primary);
+        }
+
+        .nav-link.active {
+            background: rgba(27, 127, 94, 0.08);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        .nav-badge {
+            background: var(--accent);
+            color: white;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-left: auto;
+            font-weight: 600;
+        }
+
+        /* MAIN CONTENT */
+        .main {
+            flex: 1;
+            margin-left: 260px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            color: var(--text-primary);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header-left p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #DDD5C6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #7D6C57;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.green {
+            background: rgba(27, 127, 94, 0.1);
+        }
+
+        .stat-icon.orange {
+            background: rgba(255, 159, 28, 0.1);
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--accent); }
+
+        /* CHARTS */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        /* FORMS */
+        .form-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(27, 127, 94, 0.1);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(27, 127, 94, 0.3);
+        }
+
+        /* LISTS */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .item-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .item-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .item-detail {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin: 8px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(255, 159, 28, 0.1);
+            color: var(--accent);
+        }
+
+        /* FAB */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(27, 127, 94, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(27, 127, 94, 0.4);
+        }
+
+        .hidden { display: none; }
+        .page { animation: fadeIn 0.5s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .main {
+                margin-left: 0;
+                padding: 20px;
+            }
+            .stats-grid, .charts-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .items-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <span>Carregando Gil.Finanças...</span>
+    </div>
+
+    <div id="app" class="app-container hidden">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">G</div>
+                <div class="logo-text">Gil.finanças</div>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Menu Principal</div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link active" onclick="showPage('dashboard')" data-page="dashboard">
+                            <span>📊</span> Visão geral
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showPage('clientes')" data-page="clientes">
+                            <span>👥</span> Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showPage('emprestimos')" data-page="emprestimos">
+                            <span>💰</span> Empréstimos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showPage('pagamentos')" data-page="pagamentos">
+                            <span>💳</span> Pagamentos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showPage('cobrancas')" data-page="cobrancas">
+                            <span>🔔</span> Cobranças
+                            <span class="nav-badge">3</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="menu-section">
+                <div class="menu-section-title">Gestão</div>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showPage('calendario')" data-page="calendario">
+                            <span>📅</span> Calendário
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showPage('relatorios')" data-page="relatorios">
+                            <span>📈</span> Relatórios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="showPage('configuracoes')" data-page="configuracoes">
+                            <span>⚙️</span> Configurações
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <main class="main">
+            <!-- HEADER -->
+            <div class="header">
+                <div class="header-left">
+                    <h1>Visão geral</h1>
+                    <p id="greeting">Bom dia, Gil. Aqui está o resumo do seu negócio.</p>
+                </div>
+                <div class="header-right">
+                    <div class="date-filter">
+                        <span>Quarta-feira, 15 de maio de 2024</span>
+                    </div>
+                    <div class="avatar">GF</div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD PAGE -->
+            <div id="dashboard" class="page">
+                <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--text-primary);">Tudo sob controle.</h2>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon green">👥</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Clientes ativos</div>
+                            <div class="stat-value">48</div>
+                            <div class="stat-change positive">+8,2% vs. mês anterior</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">💹</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Capital emprestado</div>
+                            <div class="stat-value">R$ 32.480</div>
+                            <div class="stat-change positive">+12,5% vs. mês anterior</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">💵</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Total a receber</div>
+                            <div class="stat-value">R$ 47.920</div>
+                            <div class="stat-change positive">+6,4% vs. mês anterior</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">⏰</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Em atraso</div>
+                            <div class="stat-value">R$ 2.840</div>
+                            <div class="stat-change negative">! precisa de atenção</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 16px; margin: 30px 0 20px 0; color: var(--text-primary);">Fluxo de recebimentos</h3>
+                <div class="chart-card">
+                    <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">R$ 8.420</div>
+                    <div style="color: var(--text-secondary); font-size: 13px;">+18,4% em relação ao mês anterior</div>
+                </div>
+
+                <div class="charts-grid" style="margin-top: 30px;">
+                    <div class="chart-card">
+                        <div class="chart-title">Empréstimos por período</div>
+                        <canvas id="chart1"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">Clientes por região</div>
+                        <canvas id="chart2"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLIENTES PAGE -->
+            <div id="clientes" class="page hidden">
+                <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--text-primary);">Clientes</h2>
+                <div class="form-card">
+                    <h3 style="margin-bottom: 20px; color: var(--text-primary);">Novo Cliente</h3>
+                    <form class="form-grid" onsubmit="addCliente(event)">
+                        <div class="form-group">
+                            <label>Nome Completo</label>
+                            <input type="text" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Telefone</label>
+                            <input type="tel" required>
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp</label>
+                            <input type="tel" required>
+                        </div>
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label>Endereço</label>
+                            <input type="text" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="grid-column: 1/-1;">➕ Adicionar Cliente</button>
+                    </form>
+                </div>
+
+                <h3 style="font-size: 18px; margin: 30px 0 20px 0; color: var(--text-primary);">Clientes Cadastrados</h3>
+                <div class="items-grid">
+                    <div class="item-card">
+                        <div class="item-name">👤 João Silva</div>
+                        <div class="item-detail">📧 joao@example.com</div>
+                        <div class="item-detail">📱 (11) 99999-9999</div>
+                        <div class="item-detail">💬 (11) 98888-8888</div>
+                        <span class="badge badge-success">✓ Ativo</span>
+                    </div>
+                    <div class="item-card">
+                        <div class="item-name">👤 Maria Santos</div>
+                        <div class="item-detail">📧 maria@example.com</div>
+                        <div class="item-detail">📱 (21) 99999-9999</div>
+                        <div class="item-detail">💬 (21) 98888-8888</div>
+                        <span class="badge badge-success">✓ Ativo</span>
+                    </div>
+                    <div class="item-card">
+                        <div class="item-name">👤 Pedro Costa</div>
+                        <div class="item-detail">📧 pedro@example.com</div>
+                        <div class="item-detail">📱 (31) 99999-9999</div>
+                        <div class="item-detail">💬 (31) 98888-8888</div>
+                        <span class="badge badge-warning">⏳ Inativo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMPRÉSTIMOS PAGE -->
+            <div id="emprestimos" class="page hidden">
+                <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--text-primary);">Empréstimos</h2>
+                <div class="form-card">
+                    <h3 style="margin-bottom: 20px; color: var(--text-primary);">Novo Empréstimo</h3>
+                    <form class="form-grid" onsubmit="addEmprestimo(event)">
+                        <div class="form-group">
+                            <label>Cliente</label>
+                            <select required>
+                                <option value="">Selecione...</option>
+                                <option>João Silva</option>
+                                <option>Maria Santos</option>
+                                <option>Pedro Costa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor (R$)</label>
+                            <input type="number" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Taxa Juros (%)</label>
+                            <input type="number" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo Juros</label>
+                            <select required>
+                                <option>Juros Simples</option>
+                                <option>Juros Compostos</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Período</label>
+                            <select required>
+                                <option>Diário</option>
+                                <option>Semanal</option>
+                                <option>Quinzenal</option>
+                                <option>Mensal</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">➕ Criar Empréstimo</button>
+                    </form>
+                </div>
+
+                <h3 style="font-size: 18px; margin: 30px 0 20px 0; color: var(--text-primary);">Empréstimos Ativos</h3>
+                <div class="items-grid">
+                    <div class="item-card">
+                        <div class="item-name">💰 João Silva</div>
+                        <div class="item-detail">Valor: <strong>R$ 2.500,00</strong></div>
+                        <div class="item-detail">Taxa: <strong>1% ao dia</strong></div>
+                        <div class="item-detail">Juros: <strong>R$ 50,00</strong></div>
+                        <span class="badge badge-success">✓ Ativo</span>
+                    </div>
+                    <div class="item-card">
+                        <div class="item-name">💰 Maria Santos</div>
+                        <div class="item-detail">Valor: <strong>R$ 5.000,00</strong></div>
+                        <div class="item-detail">Taxa: <strong>2% ao dia</strong></div>
+                        <div class="item-detail">Juros: <strong>R$ 200,00</strong></div>
+                        <span class="badge badge-success">✓ Ativo</span>
+                    </div>
+                    <div class="item-card">
+                        <div class="item-name">💰 Pedro Costa</div>
+                        <div class="item-detail">Valor: <strong>R$ 8.000,00</strong></div>
+                        <div class="item-detail">Taxa: <strong>1% ao dia</strong></div>
+                        <div class="item-detail">Juros: <strong>R$ 160,00</strong></div>
+                        <span class="badge badge-warning">⏳ Vencendo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAGAMENTOS PAGE -->
+            <div id="pagamentos" class="page hidden">
+                <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--text-primary);">Pagamentos</h2>
+                <div class="form-card">
+                    <h3 style="margin-bottom: 20px; color: var(--text-primary);">Registrar Pagamento</h3>
+                    <form class="form-grid" onsubmit="addPagamento(event)">
+                        <div class="form-group">
+                            <label>Empréstimo</label>
+                            <select required>
+                                <option value="">Selecione...</option>
+                                <option>João Silva - R$ 2.500</option>
+                                <option>Maria Santos - R$ 5.000</option>
+                                <option>Pedro Costa - R$ 8.000</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor (R$)</label>
+                            <input type="number" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select required>
+                                <option>Pagamento Total</option>
+                                <option>Pagamento Parcial</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="grid-column: 1/-1;">💳 Registrar Pagamento</button>
+                    </form>
+                </div>
+
+                <h3 style="font-size: 18px; margin: 30px 0 20px 0; color: var(--text-primary);">Últimos Pagamentos</h3>
+                <div class="items-grid">
+                    <div class="item-card">
+                        <div class="item-name">✅ João Silva</div>
+                        <div class="item-detail">Valor: <strong>R$ 500,00</strong></div>
+                        <div class="item-detail">Data: <strong>10/10/2026</strong></div>
+                        <div class="item-detail">Tipo: <strong>Parcial</strong></div>
+                    </div>
+                    <div class="item-card">
+                        <div class="item-name">✅ Maria Santos</div>
+                        <div class="item-detail">Valor: <strong>R$ 2.000,00</strong></div>
+                        <div class="item-detail">Data: <strong>09/10/2026</strong></div>
+                        <div class="item-detail">Tipo: <strong>Parcial</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COBRANÇAS PAGE -->
+            <div id="cobrancas" class="page hidden">
+                <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--text-primary);">Cobranças</h2>
+                <h3 style="font-size: 18px; margin: 30px 0 20px 0; color: var(--text-primary);">Pendentes</h3>
+                <div class="items-grid">
+                    <div class="item-card" style="border-left: 4px solid var(--accent);">
+                        <div class="item-name">🔔 Pedro Costa</div>
+                        <div class="item-detail">Valor: <strong>R$ 8.000,00</strong></div>
+                        <div class="item-detail">Vencimento: <strong>10/10/2026</strong></div>
+                        <div class="item-detail">Dias em atraso: <strong>5 dias</strong></div>
+                        <span class="badge badge-warning">⚠️ Urgente</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RELATÓRIOS PAGE -->
+            <div id="relatorios" class="page hidden">
+                <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--text-primary);">Relatórios</h2>
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">Receita Mensal</div>
+                        <canvas id="chart3"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">Status dos Empréstimos</div>
+                        <canvas id="chart4"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIGURAÇÕES PAGE -->
+            <div id="configuracoes" class="page hidden">
+                <h2 style="font-size: 24px; margin-bottom: 24px; color: var(--text-primary);">Configurações</h2>
+                <div class="form-card">
+                    <h3 style="margin-bottom: 20px; color: var(--text-primary);">Configurações Gerais</h3>
+                    <form class="form-grid">
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label>Nome da Empresa</label>
+                            <input type="text" value="Gil.Finanças" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" value="contato@gilfinancas.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Telefone</label>
+                            <input type="tel" value="(11) 98888-8888" required>
+                        </div>
+                        <button type="button" class="btn btn-primary" style="grid-column: 1/-1;" onclick="alert('Configurações salvas!')">💾 Salvar Configurações</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <!-- FAB BUTTON -->
+        <button class="fab" onclick="alert('Novo item')">+</button>
+    </div>
+
+    <script>
+        let charts = {};
+
+        function initCharts() {
+            const ctx1 = document.getElementById('chart1')?.getContext('2d');
+            if (ctx1) {
+                charts.chart1 = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+                        datasets: [{
+                            label: 'Emprestado',
+                            data: [2000, 2500, 3000, 2800, 3500, 4000],
+                            backgroundColor: 'rgba(27, 127, 94, 0.8)',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: { responsive: true, plugins: { legend: { display: true } } }
+                });
+            }
+
+            const ctx2 = document.getElementById('chart2')?.getContext('2d');
+            if (ctx2) {
+                charts.chart2 = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['São Paulo', 'Rio de Janeiro', 'Minas Gerais', 'Outros'],
+                        datasets: [{
+                            data: [40, 25, 20, 15],
+                            backgroundColor: ['#1B7F5E', '#2D9E7B', '#FF9F1C', '#E5E7EB']
+                        }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            const ctx3 = document.getElementById('chart3')?.getContext('2d');
+            if (ctx3) {
+                charts.chart3 = new Chart(ctx3, {
+                    type: 'line',
+                    data: {
+                        labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                        datasets: [{
+                            label: 'Receita (R$)',
+                            data: [800, 1200, 1600, 1800],
+                            borderColor: '#1B7F5E',
+                            backgroundColor: 'rgba(27, 127, 94, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: { responsive: true, plugins: { legend: { display: true } } }
+                });
+            }
+
+            const ctx4 = document.getElementById('chart4')?.getContext('2d');
+            if (ctx4) {
+                charts.chart4 = new Chart(ctx4, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Ativos', 'Pagos', 'Vencidos'],
+                        datasets: [{
+                            data: [60, 30, 10],
+                            backgroundColor: ['#1B7F5E', '#10B981', '#FF9F1C']
+                        }]
+                    },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+        }
+
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                initCharts();
+            }, 1500);
+        });
+
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(pageName).classList.remove('hidden');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
+        }
+
+        function addCliente(e) { e.preventDefault(); alert('✅ Cliente adicionado!'); }
+        function addEmprestimo(e) { e.preventDefault(); alert('✅ Empréstimo criado!'); }
+        function addPagamento(e) { e.preventDefault(); alert('✅ Pagamento registrado!'); }
+    </script>
+</body>
+</html>

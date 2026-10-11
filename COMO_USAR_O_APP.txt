@@ -1,0 +1,227 @@
+================================================================================
+🚀 COMO USAR O APP QUE FOI CRIADO
+================================================================================
+
+ARQUIVOS CRIADOS:
+✅ package.json
+✅ .env.example
+✅ server.js
+✅ app.js
+✅ database.js
+✅ schema.sql
+✅ routes-auth.js
+✅ routes-clients.js
+✅ routes-loans.js
+✅ routes-payments.js
+✅ middleware.js
+
+================================================================================
+PASSO 1: PREPARAR PASTA DO PROJETO
+================================================================================
+
+1. Crie uma pasta chamada "financeiro-app" no seu computador
+2. Copie TODOS esses arquivos para dentro da pasta:
+   - package.json
+   - .env.example
+   - server.js
+   - app.js
+   - database.js
+   - schema.sql
+   - routes-auth.js
+   - routes-clients.js
+   - routes-loans.js
+   - routes-payments.js
+   - middleware.js
+
+3. Na pasta "financeiro-app", crie uma pasta chamada "routes" e coloque lá:
+   - routes-auth.js (renomear para auth.js)
+   - routes-clients.js (renomear para clients.js)
+   - routes-loans.js (renomear para loans.js)
+   - routes-payments.js (renomear para payments.js)
+
+4. Copie também:
+   - middleware.js (manter onde está ou em raiz)
+   - database.js (colocar em raiz)
+
+ESTRUTURA FINAL:
+financeiro-app/
+├── package.json
+├── .env.example
+├── server.js
+├── app.js
+├── database.js
+├── middleware.js
+├── schema.sql
+└── routes/
+    ├── auth.js
+    ├── clients.js
+    ├── loans.js
+    └── payments.js
+
+================================================================================
+PASSO 2: INSTALAR NODE.JS E PostgreSQL
+================================================================================
+
+Se ainda não tem:
+
+1. INSTALE NODE.JS (https://nodejs.org)
+   - Baixe versão LTS
+   - Instale normalmente
+
+2. INSTALE PostgreSQL (https://www.postgresql.org/download)
+   - Lembre-se da senha do usuário "postgres"
+
+================================================================================
+PASSO 3: CONFIGURAR BANCO DE DADOS
+================================================================================
+
+1. Abra CMD ou PowerShell
+
+2. Entre no PostgreSQL:
+   psql -U postgres
+
+3. Digite a senha do PostgreSQL (senha que você criou na instalação)
+
+4. Crie o banco de dados:
+   CREATE DATABASE financeiro_db;
+
+5. Saia:
+   \q
+
+================================================================================
+PASSO 4: CRIAR TABELAS NO BANCO
+================================================================================
+
+1. Abra CMD ou PowerShell na pasta "financeiro-app"
+
+2. Execute:
+   psql -U postgres -d financeiro_db -f schema.sql
+
+Isso vai criar todas as tabelas automaticamente!
+
+================================================================================
+PASSO 5: CONFIGURAR .env
+================================================================================
+
+1. Na pasta "financeiro-app", copie o arquivo ".env.example"
+2. Renomeie para ".env"
+3. Abra o arquivo .env e preencha com:
+
+PORT=5000
+NODE_ENV=development
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=financeiro_db
+DB_USER=postgres
+DB_PASSWORD=SEU_SENHA_DO_POSTGRES (a senha que você criou)
+
+JWT_SECRET=sua_chave_secreta_super_longa_123456789
+JWT_EXPIRATION=24h
+
+API_URL=http://localhost:5000
+FRONTEND_URL=http://localhost:3000
+
+================================================================================
+PASSO 6: INSTALAR DEPENDÊNCIAS
+================================================================================
+
+1. Abra CMD ou PowerShell na pasta "financeiro-app"
+
+2. Execute:
+   npm install
+
+Isso vai instalar todas as bibliotecas necessárias!
+
+================================================================================
+PASSO 7: RODAR O SERVIDOR
+================================================================================
+
+1. Na mesma pasta "financeiro-app", execute:
+   npm start
+
+OU para desenvolvimento (reinicia automaticamente):
+   npm run dev
+
+Você vai ver:
+✅ Servidor rodando na porta 5000
+🌐 API URL: http://localhost:5000
+
+================================================================================
+PASSO 8: TESTAR A API
+================================================================================
+
+Abra outro CMD/PowerShell e teste:
+
+1. CRIAR USUÁRIO (REGISTRO):
+curl -X POST http://localhost:5000/api/auth/register -H "Content-Type: application/json" -d "{\"email\":\"teste@example.com\",\"password\":\"Senha123\",\"nome_dono\":\"João\",\"telefone\":\"11999999999\"}"
+
+2. FAZER LOGIN:
+curl -X POST http://localhost:5000/api/auth/login -H "Content-Type: application/json" -d "{\"email\":\"teste@example.com\",\"password\":\"Senha123\"}"
+
+Você vai receber um TOKEN! Copie esse token.
+
+3. CRIAR CLIENTE (use o token recebido acima):
+curl -X POST http://localhost:5000/api/clients -H "Content-Type: application/json" -H "Authorization: Bearer SEU_TOKEN_AQUI" -d "{\"nome\":\"Maria Silva\",\"email\":\"maria@example.com\",\"telefone\":\"11988888888\"}"
+
+4. LISTAR CLIENTES:
+curl -X GET http://localhost:5000/api/clients -H "Authorization: Bearer SEU_TOKEN_AQUI"
+
+================================================================================
+ENDPOINTS DISPONÍVEIS
+================================================================================
+
+🔐 AUTENTICAÇÃO:
+POST /api/auth/register - Criar conta
+POST /api/auth/login - Fazer login
+
+👥 CLIENTES:
+POST /api/clients - Criar cliente
+GET /api/clients - Listar clientes
+GET /api/clients/:id - Ver cliente específico
+PUT /api/clients/:id - Editar cliente
+DELETE /api/clients/:id - Deletar cliente
+
+💰 EMPRÉSTIMOS:
+POST /api/loans - Criar empréstimo
+GET /api/loans - Listar empréstimos
+GET /api/loans/:id - Ver empréstimo específico
+PUT /api/loans/:id/status - Mudar status
+
+💳 PAGAMENTOS:
+POST /api/payments - Registrar pagamento
+GET /api/payments - Listar pagamentos
+GET /api/payments/emprestimo/:emprestimo_id - Pagamentos de um empréstimo
+
+================================================================================
+PRÓXIMOS PASSOS
+================================================================================
+
+Depois que o backend estiver funcionando, vou criar:
+1. ✅ Frontend React (interface bonita)
+2. ✅ Importação/Exportação Excel
+3. ✅ App Mobile
+
+================================================================================
+ERROS COMUNS
+================================================================================
+
+❌ "Porta 5000 já está em uso"
+→ Mude o PORT no .env para 5001 ou outro diferente
+
+❌ "Erro ao conectar no PostgreSQL"
+→ Verifique o DB_PASSWORD no .env (senha do postgres)
+
+❌ "Erro: cannot find module"
+→ Execute: npm install
+
+❌ "Token inválido"
+→ Verifique se está passando o token correto no header Authorization
+
+================================================================================
+
+Pronto! Agora você tem um BACKEND FUNCIONAL! 🚀
+
+Quer que eu crie o FRONTEND React agora?
+
+================================================================================

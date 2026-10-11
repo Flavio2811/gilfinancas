@@ -1,0 +1,104 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║              🚀 GIL.FINANÇAS - BACKEND COM SUPABASE 🚀                     ║
+║                          COMECE AQUI!                                      ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+✅ SEU BACKEND ESTÁ PRONTO!
+
+Tudo já está criado e configurado. Basta fazer 2 coisas:
+
+════════════════════════════════════════════════════════════════════════════
+PASSO 1: ABRIR O ARQUIVO "setup.bat"
+════════════════════════════════════════════════════════════════════════════
+
+1. Procure o arquivo chamado "setup.bat" nesta pasta
+2. Dê 2 cliques nele (duplo clique)
+3. Uma janela preta vai abrir
+4. Deixe rodar até ver:
+
+   🚀 GIL.FINANÇAS Backend (Supabase) rodando!
+
+Pronto! O servidor está rodando em http://localhost:5000
+
+════════════════════════════════════════════════════════════════════════════
+O QUE O setup.bat FAZ AUTOMATICAMENTE:
+════════════════════════════════════════════════════════════════════════════
+
+✅ Verifica se Node.js está instalado
+✅ Cria o arquivo .env com as credenciais Supabase
+✅ Instala todas as dependências (npm install)
+✅ Inicia o servidor backend (npm start)
+
+Você não precisa fazer nada disso manualmente!
+
+════════════════════════════════════════════════════════════════════════════
+PASSO 2: ABRIR O FRONTEND
+════════════════════════════════════════════════════════════════════════════
+
+Enquanto o backend está rodando:
+
+1. Procure o arquivo "app-expanded.html" nesta pasta
+2. Dê duplo clique nele
+3. Seu navegador vai abrir a aplicação
+4. Faça um teste:
+   ├─ Clique em "Registrar"
+   ├─ Use um email: teste@example.com
+   ├─ Use uma senha: Senha123
+   └─ Clique em "Registrar"
+
+5. Depois faça login com as mesmas credenciais
+6. Agora você pode:
+   ├─ Criar clientes
+   ├─ Criar empréstimos
+   ├─ Registrar pagamentos
+   └─ Ver dashboard com estatísticas
+
+════════════════════════════════════════════════════════════════════════════
+🆘 SE TIVER ALGUM ERRO:
+════════════════════════════════════════════════════════════════════════════
+
+❌ "Node.js não foi encontrado"
+→ Baixe Node.js em: https://nodejs.org (escolha LTS)
+→ Instale e reinicie o computador
+→ Rode setup.bat novamente
+
+❌ "Port 5000 already in use"
+→ Outra aplicação está usando a porta 5000
+→ Opção 1: Feche a outra aplicação
+→ Opção 2: Abra PowerShell e rode:
+   npm start -- --port 5001
+
+❌ "Cannot find module"
+→ Rode setup.bat novamente
+→ Certifique-se que tem internet para baixar os pacotes
+
+❌ Nada funciona!
+→ Abra um PowerShell nesta pasta e rode:
+   npm install
+   npm start
+
+════════════════════════════════════════════════════════════════════════════
+📋 RESUMO RÁPIDO:
+════════════════════════════════════════════════════════════════════════════
+
+1. Duplo clique em "setup.bat" ← O ÚNICO PASSO QUE VOCÊ PRECISA FAZER
+2. Esperar até aparecer "🚀 GIL.FINANÇAS Backend (Supabase) rodando!"
+3. Duplo clique em "app-expanded.html"
+4. Usar a aplicação!
+
+════════════════════════════════════════════════════════════════════════════
+✨ PRONTO!
+════════════════════════════════════════════════════════════════════════════
+
+Seu sistema completo:
+✅ Frontend (app-expanded.html)
+✅ Backend (server-supabase.js)
+✅ Banco de dados (Supabase)
+✅ API REST (15+ endpoints)
+✅ Autenticação (JWT)
+
+Tudo integrado e funcionando! 🎉
+
+Agora basta rodar: setup.bat
