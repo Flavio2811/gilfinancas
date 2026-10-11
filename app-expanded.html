@@ -1613,12 +1613,15 @@
                 </div>
 
                 <div class="form-card">
-                    <h3 style="margin-bottom: 20px;">📊 Importar/Exportar Planilha de Clientes</h3>
+                    <h3 style="margin-bottom: 20px;">📊 Importar/Exportar Planilha</h3>
                     <div style="display: flex; gap: 20px; flex-direction: column;">
                         <div>
-                            <label style="display: block; margin-bottom: 10px; font-weight: 600;">📥 Importar Planilha (CSV ou Excel)</label>
-                            <input type="file" id="importarPlanilha" accept=".csv,.xlsx,.xls" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; width: 100%; cursor: pointer;">
-                            <button onclick="importarClientes()" style="margin-top: 10px; padding: 12px 20px; background: #1B7F5E; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">📤 Importar Clientes</button>
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600;">📥 Importar Planilha (CSV ou Excel)</label>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
+                                Importe clientes e empréstimos de uma vez. A planilha pode ter colunas de cliente (<strong>Nome, Email, Telefone, WhatsApp, Endereço</strong>) e/ou empréstimo (<strong>Valor, Taxa, Tipo, Vencimento</strong>). Se tiver as duas, cada linha vira um cliente + empréstimo.
+                            </p>
+                            <input type="file" id="importarPlanilha" accept=".csv,.xlsx,.xls,.json" style="padding: 10px; border: 1px solid var(--border); border-radius: 8px; width: 100%; cursor: pointer;">
+                            <button onclick="importarPlanilha()" style="margin-top: 10px; padding: 12px 20px; background: #1B7F5E; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">📤 Importar Tudo</button>
                             <p id="statusImportacao" style="margin-top: 10px; font-size: 14px; color: var(--text-secondary);"></p>
                         </div>
                         <div style="border-top: 1px solid var(--border); padding-top: 20px;">
@@ -1630,6 +1633,7 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <!-- EDITOR DE CORES -->
@@ -2629,7 +2633,7 @@
             return result;
         }
 
-        function importarClientes() {
+        function importarPlanilha() {
             const fileInput = document.getElementById('importarPlanilha');
             const file = fileInput.files[0];
             const statusDiv = document.getElementById('statusImportacao');
@@ -2642,46 +2646,111 @@
 
             const ext = file.name.split('.').pop().toLowerCase();
 
-            function salvarEAtualizar(clientesNovos) {
-                const clientesAtuais = JSON.parse(localStorage.getItem('clientes') || '[]');
-                const merged = [...clientesAtuais];
-                let novosCount = 0;
-                clientesNovos.forEach(novo => {
-                    const duplicado = merged.find(c =>
-                        (novo.email && c.email && c.email === novo.email) ||
-                        c.nome === novo.nome
-                    );
-                    if (!duplicado && novo.nome) {
-                        merged.push(novo);
-                        novosCount++;
-                    }
-                });
-                localStorage.setItem('clientes', JSON.stringify(merged));
-                renderizarClientes();
-                statusDiv.textContent = `✅ ${novosCount} cliente(s) importado(s)! Total: ${merged.length}`;
-                statusDiv.style.color = 'var(--success)';
-                fileInput.value = '';
+            function detectarIndices(header) {
+                return {
+                    nome:     header.findIndex(function(h) { return h.includes('nome'); }),
+                    email:    header.findIndex(function(h) { return h.includes('email'); }),
+                    telefone: header.findIndex(function(h) { return h.includes('telefone') || h.includes('fone'); }),
+                    whatsapp: header.findIndex(function(h) { return h.includes('whatsapp') || h.includes('wpp') || h.includes('zap'); }),
+                    endereco: header.findIndex(function(h) { return h.includes('ender') || h.includes('endereço'); }),
+                    status:   header.findIndex(function(h) { return h.includes('status'); }),
+                    valor:    header.findIndex(function(h) { return h.includes('valor'); }),
+                    taxa:     header.findIndex(function(h) { return h.includes('taxa') || h.includes('juros'); }),
+                    tipo:     header.findIndex(function(h) { return h.includes('tipo'); }),
+                    vencimento: header.findIndex(function(h) { return h.includes('venc'); }),
+                    data:     header.findIndex(function(h) { return h.includes('data') && !h.includes('venc'); }),
+                    cliente:  header.findIndex(function(h) { return h.includes('cliente'); })
+                };
             }
 
-            function mapearLinhaParaCliente(campos, idx, usePositional) {
-                if (usePositional) {
-                    return {
-                        nome: campos[0] || '',
-                        email: campos[1] || '',
-                        telefone: campos[2] || '',
-                        whatsapp: campos[3] || '',
-                        endereco: campos[4] || '',
-                        status: campos[5] || 'Ativo'
-                    };
+            function processarLinhas(rows) {
+                if (!rows || rows.length < 2) return;
+                const header = rows[0].map(function(h) { return String(h || '').toLowerCase().trim(); });
+                const idx = detectarIndices(header);
+
+                const temCampoCliente = idx.nome >= 0;
+                const temCampoEmprestimo = idx.valor >= 0 || idx.taxa >= 0 || idx.vencimento >= 0;
+                const temNomeOuCliente = idx.nome >= 0 || idx.cliente >= 0;
+
+                const clientesNovos = [];
+                const emprestimosNovos = [];
+
+                rows.slice(1).forEach(function(r, i) {
+                    const c = r.map(function(v) { return String(v || '').trim(); });
+
+                    const nomeCliente = (idx.nome >= 0 ? c[idx.nome] : '') ||
+                                        (idx.cliente >= 0 ? c[idx.cliente] : '') || '';
+
+                    if (temCampoCliente && nomeCliente) {
+                        clientesNovos.push({
+                            nome:     c[idx.nome] || '',
+                            email:    idx.email >= 0 ? c[idx.email] : '',
+                            telefone: idx.telefone >= 0 ? c[idx.telefone] : '',
+                            whatsapp: idx.whatsapp >= 0 ? c[idx.whatsapp] : '',
+                            endereco: idx.endereco >= 0 ? c[idx.endereco] : '',
+                            status:   idx.status >= 0 && c[idx.status] ? c[idx.status] : 'Ativo'
+                        });
+                    }
+
+                    if (temCampoEmprestimo && nomeCliente) {
+                        const valorRaw = idx.valor >= 0 ? c[idx.valor] : '0';
+                        const valor = parseFloat(String(valorRaw).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+                        if (valor > 0) {
+                            emprestimosNovos.push({
+                                id: Date.now() + i + Math.random(),
+                                cliente: nomeCliente,
+                                valor: valor,
+                                taxa: idx.taxa >= 0 ? parseFloat(c[idx.taxa]) || 0 : 0,
+                                tipo: idx.tipo >= 0 ? (c[idx.tipo] || 'simples').toLowerCase() : 'simples',
+                                vencimento: idx.vencimento >= 0 ? c[idx.vencimento] : '',
+                                data: idx.data >= 0 ? c[idx.data] : new Date().toISOString().split('T')[0],
+                                juros_acumulados: 0
+                            });
+                        }
+                    }
+                });
+
+                var clientesAtuais = JSON.parse(localStorage.getItem('clientes') || '[]');
+                var novosCliCount = 0;
+                clientesNovos.forEach(function(novo) {
+                    const dup = clientesAtuais.find(function(c) {
+                        return (novo.email && c.email && c.email === novo.email) || c.nome === novo.nome;
+                    });
+                    if (!dup && novo.nome) { clientesAtuais.push(novo); novosCliCount++; }
+                });
+                if (novosCliCount > 0) {
+                    localStorage.setItem('clientes', JSON.stringify(clientesAtuais));
+                    renderizarClientes();
                 }
-                return {
-                    nome: idx.nome >= 0 ? campos[idx.nome] || '' : '',
-                    email: idx.email >= 0 ? campos[idx.email] || '' : '',
-                    telefone: idx.telefone >= 0 ? campos[idx.telefone] || '' : '',
-                    whatsapp: idx.whatsapp >= 0 ? campos[idx.whatsapp] || '' : '',
-                    endereco: idx.endereco >= 0 ? campos[idx.endereco] || '' : '',
-                    status: idx.status >= 0 ? campos[idx.status] || 'Ativo' : 'Ativo'
-                };
+
+                var emprestimosAtuais = JSON.parse(localStorage.getItem('emprestimos') || '[]');
+                var novosEmpCount = 0;
+                emprestimosNovos.forEach(function(novo) {
+                    const dup = emprestimosAtuais.find(function(e) {
+                        return e.cliente === novo.cliente &&
+                               parseFloat(e.valor) === parseFloat(novo.valor) &&
+                               e.vencimento === novo.vencimento;
+                    });
+                    if (!dup) { emprestimosAtuais.push(novo); novosEmpCount++; }
+                });
+                if (novosEmpCount > 0) {
+                    localStorage.setItem('emprestimos', JSON.stringify(emprestimosAtuais));
+                    renderizarEmprestimos();
+                    atualizarEstatisticas();
+                    if (typeof updateCharts === 'function') updateCharts();
+                }
+
+                var partes = [];
+                if (novosCliCount > 0) partes.push(novosCliCount + ' cliente(s)');
+                if (novosEmpCount > 0) partes.push(novosEmpCount + ' empréstimo(s)');
+                if (partes.length > 0) {
+                    statusDiv.textContent = '✅ Importado: ' + partes.join(' e ') + '!';
+                    statusDiv.style.color = 'var(--success)';
+                } else {
+                    statusDiv.textContent = '⚠️ Nenhum dado novo encontrado (verifique as colunas).';
+                    statusDiv.style.color = 'var(--warning)';
+                }
+                fileInput.value = '';
             }
 
             if (ext === 'json') {
@@ -2689,15 +2758,20 @@
                 reader.onload = function(e) {
                     try {
                         const data = JSON.parse(e.target.result);
-                        const lista = Array.isArray(data) ? data.map(c => ({
-                            nome: c.nome || '',
-                            email: c.email || '',
-                            telefone: c.telefone || '',
-                            whatsapp: c.whatsapp || '',
-                            endereco: c.endereco || '',
-                            status: c.status || 'Ativo'
-                        })).filter(c => c.nome) : [];
-                        salvarEAtualizar(lista);
+                        if (Array.isArray(data) && data.length > 0) {
+                            const keys = Object.keys(data[0]).map(function(k) { return k.toLowerCase(); });
+                            const header = keys;
+                            const rows = [keys].concat(data.map(function(obj) {
+                                return keys.map(function(k) {
+                                    const origKey = Object.keys(obj).find(function(ok) { return ok.toLowerCase() === k; });
+                                    return origKey ? obj[origKey] : '';
+                                });
+                            }));
+                            processarLinhas(rows);
+                        } else {
+                            statusDiv.textContent = '⚠️ JSON vazio ou formato inválido.';
+                            statusDiv.style.color = 'var(--warning)';
+                        }
                     } catch {
                         statusDiv.textContent = '❌ Arquivo JSON inválido!';
                         statusDiv.style.color = 'var(--danger)';
@@ -2717,22 +2791,7 @@
                         const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
                         const ws = wb.Sheets[wb.SheetNames[0]];
                         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                        if (rows.length < 2) { salvarEAtualizar([]); return; }
-                        const header = rows[0].map(h => String(h).toLowerCase().trim());
-                        const idx = {
-                            nome: header.findIndex(h => h.includes('nome')),
-                            email: header.findIndex(h => h.includes('email')),
-                            telefone: header.findIndex(h => h.includes('telefone')),
-                            whatsapp: header.findIndex(h => h.includes('whatsapp')),
-                            endereco: header.findIndex(h => h.includes('ender')),
-                            status: header.findIndex(h => h.includes('status'))
-                        };
-                        const usePositional = idx.nome < 0;
-                        const lista = rows.slice(1).map(r => {
-                            const campos = r.map(c => String(c).trim());
-                            return mapearLinhaParaCliente(campos, idx, usePositional);
-                        }).filter(c => c.nome);
-                        salvarEAtualizar(lista);
+                        processarLinhas(rows);
                     } catch {
                         statusDiv.textContent = '❌ Erro ao ler arquivo Excel!';
                         statusDiv.style.color = 'var(--danger)';
@@ -2745,22 +2804,14 @@
                 reader.onload = function(e) {
                     try {
                         const text = e.target.result;
-                        const linhas = text.split(/\r?\n/).filter(l => l.trim());
-                        if (linhas.length < 2) { salvarEAtualizar([]); return; }
-                        const header = parseCSVLine(linhas[0]).map(h => h.toLowerCase().trim());
-                        const idx = {
-                            nome: header.findIndex(h => h.includes('nome')),
-                            email: header.findIndex(h => h.includes('email')),
-                            telefone: header.findIndex(h => h.includes('telefone')),
-                            whatsapp: header.findIndex(h => h.includes('whatsapp')),
-                            endereco: header.findIndex(h => h.includes('ender')),
-                            status: header.findIndex(h => h.includes('status'))
-                        };
-                        const usePositional = idx.nome < 0;
-                        const lista = linhas.slice(1).map(linha => {
-                            return mapearLinhaParaCliente(parseCSVLine(linha), idx, usePositional);
-                        }).filter(c => c.nome);
-                        salvarEAtualizar(lista);
+                        const linhas = text.split(/\r?\n/).filter(function(l) { return l.trim(); });
+                        if (linhas.length < 2) {
+                            statusDiv.textContent = '⚠️ Arquivo vazio.';
+                            statusDiv.style.color = 'var(--warning)';
+                            return;
+                        }
+                        const rows = linhas.map(function(l) { return parseCSVLine(l); });
+                        processarLinhas(rows);
                     } catch {
                         statusDiv.textContent = '❌ Erro ao ler arquivo CSV!';
                         statusDiv.style.color = 'var(--danger)';
