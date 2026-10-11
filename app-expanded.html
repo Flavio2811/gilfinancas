@@ -1082,7 +1082,7 @@
                         <div>
                             <div class="stat-label">Clientes Ativos</div>
                             <div class="stat-value" id="total-clientes">0</div>
-                            <div class="stat-change">+8,2% vs. mês anterior</div>
+                            <div class="stat-change" id="change-clientes">0 ativos</div>
                         </div>
                     </div>
                     <div class="card stat-card">
@@ -1090,7 +1090,7 @@
                         <div>
                             <div class="stat-label">Capital Emprestado</div>
                             <div class="stat-value" id="total-capital">R$ 0,00</div>
-                            <div class="stat-change">+12,5% vs. mês anterior</div>
+                            <div class="stat-change" id="change-capital">0 empréstimos este mês</div>
                         </div>
                     </div>
                     <div class="card stat-card">
@@ -1098,7 +1098,7 @@
                         <div>
                             <div class="stat-label">Total a Receber</div>
                             <div class="stat-value" id="total-receber">R$ 0,00</div>
-                            <div class="stat-change">+6,4% vs. mês anterior</div>
+                            <div class="stat-change" id="change-receber">0 pagamentos este mês</div>
                         </div>
                     </div>
                     <div class="card stat-card">
@@ -1122,7 +1122,7 @@
                         <canvas id="chart-distribuicao" height="300"></canvas>
                     </div>
                     <div class="chart-card">
-                        <div class="chart-title">Clientes por Região</div>
+                        <div class="chart-title">Tipo de Juros</div>
                         <canvas id="chart-regiao" height="300"></canvas>
                     </div>
                 </div>
@@ -2080,6 +2080,26 @@
             if (elReceber) elReceber.textContent = fmt(totalAReceber);
             if (elAtraso) elAtraso.textContent = fmt(totalEmAtraso);
             if (elRecebido) elRecebido.textContent = fmt(totalPago);
+
+            // Atualizar stat-change com dados reais do mês atual
+            const mesAtual = hoje.getMonth();
+            const anoAtual = hoje.getFullYear();
+            const empMes = emprestimos.filter(function(e) {
+                if (!e.data) return false;
+                const d = new Date(e.data + 'T00:00:00');
+                return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+            }).length;
+            const pagMes = pagamentos.filter(function(p) {
+                if (!p.data_pagamento) return false;
+                const d = new Date(p.data_pagamento + 'T00:00:00');
+                return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+            }).length;
+            const elChangeClientes = document.getElementById('change-clientes');
+            const elChangeCapital = document.getElementById('change-capital');
+            const elChangeReceber = document.getElementById('change-receber');
+            if (elChangeClientes) elChangeClientes.textContent = totalClientes + (totalClientes === 1 ? ' ativo' : ' ativos');
+            if (elChangeCapital) elChangeCapital.textContent = empMes + (empMes === 1 ? ' empréstimo este mês' : ' empréstimos este mês');
+            if (elChangeReceber) elChangeReceber.textContent = pagMes + (pagMes === 1 ? ' pagamento este mês' : ' pagamentos este mês');
         }
 
         function updateCharts() {
@@ -2087,36 +2107,61 @@
             const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
             const pagamentos = JSON.parse(localStorage.getItem('pagamentos') || '[]');
 
-            // Calcular status dos empréstimos
-            let ativosCount = emprestimos.length;
-            let pagosCount = pagamentos.length > 0 ? Math.floor(emprestimos.length * 0.3) : 0;
-            let vencidosCount = emprestimos.length > 0 ? Math.floor(emprestimos.length * 0.1) : 0;
+            // Calcular status real dos empréstimos
+            const hojeCharts = new Date(); hojeCharts.setHours(0, 0, 0, 0);
+            const pagamentosMapChart = {};
+            pagamentos.forEach(function(p) {
+                if (!pagamentosMapChart[p.emprestimo_id]) pagamentosMapChart[p.emprestimo_id] = 0;
+                pagamentosMapChart[p.emprestimo_id] += parseFloat(p.valor) || 0;
+            });
+            let pagosCount = 0, vencidosCount = 0;
+            emprestimos.forEach(function(emp) {
+                const totalPago = pagamentosMapChart[emp.id] || 0;
+                if (totalPago >= parseFloat(emp.valor || 0)) { pagosCount++; return; }
+                if (emp.vencimento) {
+                    const v = new Date(emp.vencimento + 'T00:00:00');
+                    if (v < hojeCharts) vencidosCount++;
+                }
+            });
+            let ativosCount = Math.max(0, emprestimos.length - pagosCount - vencidosCount);
 
-            if (ativosCount + pagosCount + vencidosCount === 0) {
-                ativosCount = 60; pagosCount = 30; vencidosCount = 10;
+            // Calcular receita mensal real dos últimos 6 meses
+            const now6 = new Date();
+            const months6Labels = [];
+            const months6Data = [];
+            for (let mi = 5; mi >= 0; mi--) {
+                const d = new Date(now6.getFullYear(), now6.getMonth() - mi, 1);
+                months6Labels.push(d.toLocaleDateString('pt-BR', {month: 'short'}));
+                const m = d.getMonth(), y = d.getFullYear();
+                const total = pagamentos.filter(function(p) {
+                    if (!p.data_pagamento) return false;
+                    const dp = new Date(p.data_pagamento + 'T00:00:00');
+                    return dp.getFullYear() === y && dp.getMonth() === m;
+                }).reduce(function(sum, p) { return sum + (parseFloat(p.valor) || 0); }, 0);
+                months6Data.push(parseFloat(total.toFixed(2)));
             }
 
-            // Calcular receita por cliente
+            // Calcular receita por cliente (com parseFloat para evitar concatenação de strings)
             const receitaClientes = {};
             emprestimos.forEach(emp => {
                 if (!receitaClientes[emp.cliente]) receitaClientes[emp.cliente] = 0;
-                receitaClientes[emp.cliente] += emp.valor || 0;
+                receitaClientes[emp.cliente] += parseFloat(emp.valor) || 0;
             });
 
             const clientesNomes = Object.keys(receitaClientes).slice(0, 3);
             const clientesValues = Object.values(receitaClientes).slice(0, 3);
 
-            // Chart 1: Fluxo de Recebimentos
+            // Chart 1: Fluxo de Recebimentos (dados reais)
             const ctx1 = document.getElementById('chart-fluxo')?.getContext('2d');
             if (ctx1) {
                 if (charts.fluxo) charts.fluxo.destroy();
                 charts.fluxo = new Chart(ctx1, {
                     type: 'bar',
                     data: {
-                        labels: ['Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set'],
+                        labels: months6Labels,
                         datasets: [{
                             label: 'Recebimentos (R$)',
-                            data: [4200, 5800, 6500, 7200, 8100, 8420],
+                            data: months6Data,
                             backgroundColor: '#1B7F5E',
                             borderRadius: 6
                         }]
@@ -2139,31 +2184,34 @@
                 });
             }
 
-            // Chart 3: Região
+            // Chart 3: Tipo de juros (dados reais)
             const ctx3 = document.getElementById('chart-regiao')?.getContext('2d');
             if (ctx3) {
                 if (charts.regiao) charts.regiao.destroy();
+                const simplesCount = emprestimos.filter(function(e) { return (e.tipo || e.tipo_juros || '') === 'simples'; }).length;
+                const compostosCount = emprestimos.filter(function(e) { return (e.tipo || e.tipo_juros || '') === 'compostos'; }).length;
+                const outrosTipoCount = emprestimos.length - simplesCount - compostosCount;
                 charts.regiao = new Chart(ctx3, {
                     type: 'doughnut',
                     data: {
-                        labels: ['São Paulo', 'Rio de Janeiro', 'MG', 'Outros'],
-                        datasets: [{ data: [40, 35, 15, 10], backgroundColor: ['#1B7F5E', '#2D9E7B', '#FF9F1C', '#F59E0B'] }]
+                        labels: ['Juros Simples', 'Juros Compostos', 'Outros'],
+                        datasets: [{ data: [simplesCount, compostosCount, outrosTipoCount], backgroundColor: ['#1B7F5E', '#2D9E7B', '#FF9F1C'] }]
                     },
                     options: { responsive: true, maintainAspectRatio: false }
                 });
             }
 
-            // Chart 4: Receita
+            // Chart 4: Receita (dados reais)
             const ctx4 = document.getElementById('chart-receita')?.getContext('2d');
             if (ctx4) {
                 if (charts.receita) charts.receita.destroy();
                 charts.receita = new Chart(ctx4, {
                     type: 'line',
                     data: {
-                        labels: ['Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set'],
+                        labels: months6Labels,
                         datasets: [{
-                            label: 'Receita Total (R$)',
-                            data: [4200, 5800, 6500, 7200, 8100, 8420],
+                            label: 'Recebimentos (R$)',
+                            data: months6Data,
                             borderColor: '#1B7F5E',
                             backgroundColor: 'rgba(27, 127, 94, 0.1)',
                             tension: 0.4,
@@ -2181,7 +2229,7 @@
                 charts.status = new Chart(ctx5, {
                     type: 'pie',
                     data: {
-                        labels: [`Ativos (${ativosCount}%)`, `Pagos (${pagosCount}%)`, `Vencidos (${vencidosCount}%)`],
+                        labels: [`Ativos (${ativosCount})`, `Pagos (${pagosCount})`, `Vencidos (${vencidosCount})`],
                         datasets: [{ data: [ativosCount, pagosCount, vencidosCount], backgroundColor: ['#1B7F5E', '#10B981', '#FF9F1C'] }]
                     },
                     options: { responsive: true, maintainAspectRatio: false }
@@ -2944,7 +2992,6 @@
             if (confirm('Deseja remover a foto de perfil?')) {
                 localStorage.removeItem('fotoPerfil');
                 carregarFotoPerfil();
-                location.reload();
             }
         }
 
