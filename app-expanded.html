@@ -686,7 +686,7 @@
     </div>
 
     <!-- LOGIN/SIGNUP -->
-    <div id="login-page" class="login-container hidden">
+    <div id="login-page" class="login-container">
         <div class="login-left">
             <!-- TELA DE LOGIN -->
             <div id="login-form" class="login-card">
@@ -3494,12 +3494,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            carregarNotificacoes();
-            carregarCores();
-            carregarFotoPerfil();
-            inicializarFiltroAlfabetico();
-            inicializarFiltroCalendario();
-            setTimeout(() => {
+            try { carregarNotificacoes(); } catch(e) {}
+            try { carregarCores(); } catch(e) {}
+            try { carregarFotoPerfil(); } catch(e) {}
+            try { inicializarFiltroAlfabetico(); } catch(e) {}
+            try { inicializarFiltroCalendario(); } catch(e) {}
+
+            try {
                 const token = localStorage.getItem('token');
                 const userData = localStorage.getItem('user');
 
@@ -3514,37 +3515,38 @@
                     document.getElementById('profile-phone').value = user.phone || '';
                     document.getElementById('profile-whatsapp').value = user.whatsapp || '';
                     document.getElementById('profile-created').textContent = new Date().toLocaleDateString('pt-BR');
-                }
-
-                if (token) {
                     document.getElementById('login-page').classList.add('hidden');
                     showPage('dashboard');
-                } else {
-                    document.getElementById('login-page').classList.remove('hidden');
                 }
-            }, 1500);
+                // Se não tem token, login-page já está visível por padrão no HTML
+            } catch(e) {
+                // Garante que a tela de login aparece mesmo com erro
+                document.getElementById('login-page').classList.remove('hidden');
+            }
         });
 
         // Sincroniza dados do app com a conta do usuário no servidor automaticamente
-        (function() {
-            const _origSet = localStorage.setItem.bind(localStorage);
-            localStorage._origSet = _origSet; // exposto para carregarDadosDoServidor evitar loop
-            const syncMap = { clientes: '/clients', emprestimos: '/loans', pagamentos: '/payments' };
-            localStorage.setItem = function(key, value) {
-                _origSet(key, value);
-                const endpoint = syncMap[key];
-                if (endpoint) {
-                    const tk = localStorage.getItem('token');
-                    if (tk) {
-                        fetch(endpoint, {
-                            method: 'POST',
-                            headers: { 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' },
-                            body: value
-                        }).catch(() => {});
+        try {
+            (function() {
+                const _origSet = localStorage.setItem.bind(localStorage);
+                localStorage._origSet = _origSet;
+                const syncMap = { clientes: '/clients', emprestimos: '/loans', pagamentos: '/payments' };
+                localStorage.setItem = function(key, value) {
+                    try { _origSet(key, value); } catch(e) {}
+                    const endpoint = syncMap[key];
+                    if (endpoint) {
+                        const tk = localStorage.getItem('token');
+                        if (tk) {
+                            fetch(endpoint, {
+                                method: 'POST',
+                                headers: { 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' },
+                                body: value
+                            }).catch(() => {});
+                        }
                     }
-                }
-            };
-        })();
+                };
+            })();
+        } catch(e) {}
 
         // Auto-reload desabilitado para evitar flicker
         // let lastFileVersion = null;
