@@ -1168,27 +1168,7 @@
 
                 <h3 style="font-size: 18px; margin: 30px 0 20px 0;">👥 Clientes Cadastrados</h3>
                 <div class="items-grid" id="lista-clientes">
-                    <div class="item-card cliente-item" id="cliente-joao-silva" data-nome="João Silva" data-email="joao@example.com" data-telefone="(11) 99999-9999" onclick="abrirPerfilCliente('João Silva', 'joao@example.com', '(11) 99999-9999', '(11) 98888-8888')" style="cursor: pointer;">
-                        <div class="item-name">João Silva</div>
-                        <div class="item-detail">📧 joao@example.com</div>
-                        <div class="item-detail">📱 (11) 99999-9999</div>
-                        <div class="item-detail">💬 (11) 98888-8888</div>
-                        <span class="badge badge-success">✓ Ativo</span>
-                    </div>
-                    <div class="item-card cliente-item" id="cliente-maria-santos" data-nome="Maria Santos" data-email="maria@example.com" data-telefone="(21) 99999-9999" onclick="abrirPerfilCliente('Maria Santos', 'maria@example.com', '(21) 99999-9999', '(21) 98888-8888')" style="cursor: pointer;">
-                        <div class="item-name">Maria Santos</div>
-                        <div class="item-detail">📧 maria@example.com</div>
-                        <div class="item-detail">📱 (21) 99999-9999</div>
-                        <div class="item-detail">💬 (21) 98888-8888</div>
-                        <span class="badge badge-success">✓ Ativo</span>
-                    </div>
-                    <div class="item-card cliente-item" id="cliente-pedro-costa" data-nome="Pedro Costa" data-email="pedro@example.com" data-telefone="(31) 99999-9999" onclick="abrirPerfilCliente('Pedro Costa', 'pedro@example.com', '(31) 99999-9999', '(31) 98888-8888')" style="cursor: pointer;">
-                        <div class="item-name">Pedro Costa</div>
-                        <div class="item-detail">📧 pedro@example.com</div>
-                        <div class="item-detail">📱 (31) 99999-9999</div>
-                        <div class="item-detail">💬 (31) 98888-8888</div>
-                        <span class="badge badge-warning">⏳ Inativo</span>
-                    </div>
+                    <p style="color: var(--text-secondary);">Nenhum cliente cadastrado</p>
                 </div>
             </div>
 
@@ -1211,15 +1191,15 @@
                         </div>
                         <div class="form-group">
                             <label>Valor (R$)</label>
-                            <input type="number" step="0.01" required>
+                            <input type="number" id="emp-valor" step="0.01" min="0.01" required>
                         </div>
                         <div class="form-group">
                             <label>Taxa (%)</label>
-                            <input type="number" step="0.1" required>
+                            <input type="number" id="emp-taxa" step="0.1" min="0.01" required>
                         </div>
                         <div class="form-group">
                             <label>Período</label>
-                            <select required>
+                            <select id="emp-periodo" required>
                                 <option>Diário</option>
                                 <option>Semanal</option>
                                 <option>Quinzenal</option>
@@ -1228,10 +1208,14 @@
                         </div>
                         <div class="form-group">
                             <label>Tipo de Juros</label>
-                            <select required>
-                                <option>Juros Simples</option>
-                                <option>Juros Compostos</option>
+                            <select id="emp-tipo-juros" required>
+                                <option value="simples">Juros Simples</option>
+                                <option value="compostos">Juros Compostos</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Data de Vencimento</label>
+                            <input type="date" id="emp-vencimento" required>
                         </div>
                         <button type="submit" class="btn-primary" style="grid-column: 1/-1;">Criar Empréstimo</button>
                     </form>
@@ -1260,15 +1244,15 @@
                         </div>
                         <div class="form-group">
                             <label>Valor Pago (R$)</label>
-                            <input type="number" step="0.01" required>
+                            <input type="number" id="pag-valor" step="0.01" min="0.01" required>
                         </div>
                         <div class="form-group">
                             <label>Data do Pagamento</label>
-                            <input type="date" required>
+                            <input type="date" id="pag-data" required>
                         </div>
                         <div class="form-group">
                             <label>Método</label>
-                            <select required>
+                            <select id="pag-metodo" required>
                                 <option>Dinheiro</option>
                                 <option>PIX</option>
                                 <option>Transferência</option>
@@ -1280,43 +1264,8 @@
                 </div>
 
                 <h3 style="font-size: 18px; margin: 30px 0 20px 0;">📋 Últimos Pagamentos</h3>
-                <div class="card">
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Cliente</th>
-                                    <th>Valor</th>
-                                    <th>Data</th>
-                                    <th>Método</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>João Silva</td>
-                                    <td>R$ 1.000,00</td>
-                                    <td>08/10/2026</td>
-                                    <td>PIX</td>
-                                    <td><span class="badge badge-success">Confirmado</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Maria Santos</td>
-                                    <td>R$ 2.500,00</td>
-                                    <td>07/10/2026</td>
-                                    <td>Transferência</td>
-                                    <td><span class="badge badge-success">Confirmado</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Pedro Costa</td>
-                                    <td>R$ 1.500,00</td>
-                                    <td>05/10/2026</td>
-                                    <td>Dinheiro</td>
-                                    <td><span class="badge badge-success">Confirmado</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="items-grid" id="lista-pagamentos">
+                    <p style="color: var(--text-secondary);">Nenhum pagamento registrado</p>
                 </div>
             </div>
 
@@ -1324,8 +1273,8 @@
             <div id="cobrancas" class="page hidden">
                 <h2 style="font-size: 24px; margin-bottom: 24px;">Sistema de Cobranças</h2>
 
-                <div class="alert alert-danger">
-                    <strong>⚠️ 3 Cobranças Pendentes</strong> - Você tem empréstimos vencidos ou próximos do vencimento
+                <div class="alert alert-danger" id="alerta-cobrancas" style="display:none;">
+                    <strong id="alerta-cobrancas-texto">⚠️ Cobranças Pendentes</strong>
                 </div>
 
                 <h3 style="font-size: 18px; margin: 30px 0 20px 0;">🔔 Pendentes</h3>
@@ -1335,28 +1284,10 @@
                 </div>
 
                 <div class="items-grid" id="items-cobranca">
-                    <div class="item-card" style="border-left: 4px solid var(--danger);">
-                        <div class="item-name">Pedro Costa - R$ 8.000</div>
-                        <div class="item-detail">Vencimento: 05/10/2026</div>
-                        <div class="item-detail">Atraso: 5 dias</div>
-                        <div class="item-detail">Valor devido: R$ 8.160 (com juros)</div>
-                        <span class="badge badge-danger">🚨 Urgente</span>
-                        <div style="margin-top: 10px; display: flex; gap: 8px;">
-                            <button class="btn-small" onclick="enviarEmail('Pedro Costa', 'pedro@example.com')">📧 Enviar Email</button>
-                            <button class="btn-small" onclick="enviarWhatsApp('Pedro Costa', '(31) 99999-9999')">💬 WhatsApp</button>
-                        </div>
-                    </div>
-                    <div class="item-card" style="border-left: 4px solid var(--warning);">
-                        <div class="item-name">Maria Santos - R$ 5.000</div>
-                        <div class="item-detail">Vencimento: 20/10/2026</div>
-                        <div class="item-detail">Dias até vencimento: 10 dias</div>
-                        <div class="item-detail">Valor a cobrar: R$ 5.200 (com juros)</div>
-                        <span class="badge badge-warning">⏳ Próximo vencimento</span>
-                        <div style="margin-top: 10px; display: flex; gap: 8px;">
-                            <button class="btn-small" onclick="enviarEmail('Maria Santos', 'maria@example.com')">📧 Enviar Email</button>
-                            <button class="btn-small" onclick="enviarWhatsApp('Maria Santos', '(21) 99999-9999')">💬 WhatsApp</button>
-                        </div>
-                    </div>
+                    <p style="color: var(--text-secondary);">Nenhuma cobrança pendente</p>
+                </div>
+
+                <div style="display:none;"><!-- old hardcoded items removed -->
                     <div class="item-card" style="border-left: 4px solid var(--warning);">
                         <div class="item-name">João Silva - R$ 2.500</div>
                         <div class="item-detail">Vencimento: 15/10/2026</div>
@@ -1650,19 +1581,19 @@
                     <form class="form-grid" onsubmit="saveConfig(event)">
                         <div class="form-group" style="grid-column: 1/-1;">
                             <label>Nome da Empresa</label>
-                            <input type="text" value="Gil.Finanças">
+                            <input type="text" id="config-empresa" placeholder="Gil.Finanças">
                         </div>
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" value="contato@gilfinancas.com">
+                            <input type="email" id="config-email" placeholder="contato@gilfinancas.com">
                         </div>
                         <div class="form-group">
                             <label>Telefone</label>
-                            <input type="tel" value="(11) 98888-8888">
+                            <input type="tel" id="config-telefone" placeholder="(11) 98888-8888">
                         </div>
                         <div class="form-group" style="grid-column: 1/-1;">
                             <label>Endereço</label>
-                            <input type="text" value="São Paulo, SP">
+                            <input type="text" id="config-endereco" placeholder="São Paulo, SP">
                         </div>
                         <button type="submit" class="btn-primary" style="grid-column: 1/-1;">💾 Salvar Configurações</button>
                     </form>
@@ -2125,6 +2056,10 @@
             if (pageName === 'editor-cores') {
                 setTimeout(carregarCores, 100);
             }
+
+            if (pageName === 'configuracoes') {
+                setTimeout(carregarConfig, 100);
+            }
         }
 
         function atualizarEstatisticas() {
@@ -2448,9 +2383,98 @@
             listaCli.appendChild(clienteCard);
         }
 
-        function addEmprestimo(e) { e.preventDefault(); alert('✅ Empréstimo criado com sucesso!'); }
-        function addPagamento(e) { e.preventDefault(); alert('✅ Pagamento registrado com sucesso!'); }
-        function saveConfig(e) { e.preventDefault(); alert('✅ Configurações salvas!'); }
+        function addEmprestimo(e) {
+            e.preventDefault();
+            const cliente = document.getElementById('cliente-selecionado-emprestimo').value.trim();
+            const valor = parseFloat(document.getElementById('emp-valor').value);
+            const taxa = parseFloat(document.getElementById('emp-taxa').value);
+            const periodo = document.getElementById('emp-periodo').value;
+            const tipo = document.getElementById('emp-tipo-juros').value;
+            const vencimento = document.getElementById('emp-vencimento').value;
+
+            if (!cliente) { alert('❌ Selecione um cliente!'); return; }
+            if (!valor || valor <= 0) { alert('❌ Informe um valor válido!'); return; }
+            if (!taxa || taxa <= 0) { alert('❌ Informe uma taxa válida!'); return; }
+            if (!vencimento) { alert('❌ Informe a data de vencimento!'); return; }
+
+            const jurosAcumulados = tipo === 'compostos'
+                ? (valor * Math.pow(1 + taxa / 100, 30) - valor).toFixed(2)
+                : (valor * taxa / 100 * 30).toFixed(2);
+
+            const novoEmprestimo = {
+                id: Date.now(),
+                cliente, valor: valor.toFixed(2), taxa, periodo, tipo,
+                data: new Date().toISOString().split('T')[0],
+                vencimento, jurosAcumulados, status: 'Ativo'
+            };
+
+            const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
+            emprestimos.push(novoEmprestimo);
+            localStorage.setItem('emprestimos', JSON.stringify(emprestimos));
+
+            updateCharts();
+            atualizarEstatisticas();
+            renderizarEmprestimos();
+
+            e.target.reset();
+            document.getElementById('busca-cliente-emprestimo').value = '';
+            document.getElementById('cliente-selecionado-emprestimo').value = '';
+            alert('✅ Empréstimo criado!\n\nCliente: ' + cliente + '\nValor: R$ ' + valor.toFixed(2) + '\nVencimento: ' + vencimento);
+        }
+
+        function addPagamento(e) {
+            e.preventDefault();
+            const emprestimoId = document.getElementById('emprestimo-selecionado-pagamento').value;
+            const valor = parseFloat(document.getElementById('pag-valor').value);
+            const data = document.getElementById('pag-data').value;
+            const metodo = document.getElementById('pag-metodo').value;
+
+            if (!emprestimoId) { alert('❌ Selecione um empréstimo!'); return; }
+            if (!valor || valor <= 0) { alert('❌ Informe um valor válido!'); return; }
+            if (!data) { alert('❌ Informe a data do pagamento!'); return; }
+
+            const novoPagamento = {
+                id: Date.now(),
+                emprestimo_id: parseInt(emprestimoId) || emprestimoId,
+                valor: valor.toFixed(2),
+                data_pagamento: data,
+                metodo
+            };
+
+            const pagamentos = JSON.parse(localStorage.getItem('pagamentos') || '[]');
+            pagamentos.push(novoPagamento);
+            localStorage.setItem('pagamentos', JSON.stringify(pagamentos));
+
+            atualizarEstatisticas();
+            renderizarPagamentos();
+
+            e.target.reset();
+            document.getElementById('busca-emprestimo-pagamento').value = '';
+            document.getElementById('emprestimo-selecionado-pagamento').value = '';
+            alert('✅ Pagamento registrado!\nValor: R$ ' + valor.toFixed(2) + ' | ' + metodo + ' em ' + data);
+        }
+
+        function saveConfig(e) {
+            e.preventDefault();
+            const config = {
+                empresa: document.getElementById('config-empresa').value,
+                email: document.getElementById('config-email').value,
+                telefone: document.getElementById('config-telefone').value,
+                endereco: document.getElementById('config-endereco').value
+            };
+            localStorage.setItem('config-empresa', JSON.stringify(config));
+            alert('✅ Configurações salvas!');
+        }
+
+        function carregarConfig() {
+            try {
+                const config = JSON.parse(localStorage.getItem('config-empresa') || '{}');
+                if (config.empresa) document.getElementById('config-empresa').value = config.empresa;
+                if (config.email) document.getElementById('config-email').value = config.email;
+                if (config.telefone) document.getElementById('config-telefone').value = config.telefone;
+                if (config.endereco) document.getElementById('config-endereco').value = config.endereco;
+            } catch(e) {}
+        }
 
         function exportToCSV() {
             const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
@@ -3124,6 +3148,7 @@
 
             // Criar objeto de novo empréstimo
             const novoEmprestimo = {
+                id: Date.now(),
                 cliente: clienteEmprestimoAtual.nome,
                 valor: valor.toFixed(2),
                 taxa: taxa,
@@ -3263,11 +3288,24 @@
         }
 
         function renderizarCobrancas() {
-            const listaCobrancas = document.getElementById('lista-cobrancas');
+            const listaCobrancas = document.getElementById('items-cobranca');
             if (!listaCobrancas) return;
 
             const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
-            const cobrancasPendentes = emprestimos.filter(e => new Date(e.vencimento) < new Date());
+            const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
+            const hoje = new Date(); hoje.setHours(0,0,0,0);
+            const cobrancasPendentes = emprestimos.filter(e => e.vencimento && new Date(e.vencimento) < hoje);
+
+            const alerta = document.getElementById('alerta-cobrancas');
+            const alertaTexto = document.getElementById('alerta-cobrancas-texto');
+            if (alerta) {
+                if (cobrancasPendentes.length > 0) {
+                    alerta.style.display = '';
+                    if (alertaTexto) alertaTexto.textContent = '⚠️ ' + cobrancasPendentes.length + ' Cobrança(s) Pendente(s) — Você tem empréstimos vencidos!';
+                } else {
+                    alerta.style.display = 'none';
+                }
+            }
 
             if (cobrancasPendentes.length === 0) {
                 listaCobrancas.innerHTML = '<p style="color: var(--text-secondary);">Nenhuma cobrança pendente</p>';
@@ -3276,13 +3314,20 @@
 
             let html = '';
             cobrancasPendentes.forEach(emp => {
-                const diasAtrasado = Math.floor((new Date() - new Date(emp.vencimento)) / (1000 * 60 * 60 * 24));
+                const diasAtrasado = Math.floor((hoje - new Date(emp.vencimento)) / (1000 * 60 * 60 * 24));
+                const cliente = clientes.find(c => c.nome === emp.cliente);
+                const email = cliente?.email || '';
+                const tel = cliente?.whatsapp || cliente?.telefone || '';
                 html += `
-                    <div class="item-card" style="cursor: pointer; border-left: 4px solid #FF6B6B;">
+                    <div class="item-card" style="border-left: 4px solid #FF6B6B;">
                         <div class="item-name">${emp.cliente} - R$ ${emp.valor}</div>
                         <div class="item-detail">Vencimento: ${emp.vencimento}</div>
                         <div class="item-detail">Dias em atraso: ${diasAtrasado}</div>
                         <span class="badge badge-danger">⚠️ Atrasado</span>
+                        ${email || tel ? `<div style="margin-top:10px;display:flex;gap:8px;">
+                            ${email ? `<button class="btn-small" onclick="enviarEmail('${emp.cliente}','${email}')">📧 Email</button>` : ''}
+                            ${tel ? `<button class="btn-small" onclick="enviarWhatsApp('${emp.cliente}','${tel}')">💬 WhatsApp</button>` : ''}
+                        </div>` : ''}
                     </div>
                 `;
             });
@@ -3385,7 +3430,7 @@
                     <div style="padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;"
                          onmouseover="this.style.background='var(--bg-gray)'"
                          onmouseout="this.style.background='white'"
-                         onclick="selecionarEmprestimoPagamento('${emp.cliente} - R$ ${emp.valor} (${empTaxa}% a.d.)', '${emp.cliente}', '${emp.valor}')">
+                         onclick="selecionarEmprestimoPagamento('${emp.cliente} - R$ ${emp.valor} (${empTaxa}% a.d.)', '${emp.id || ''}')">
                         <div style="font-weight: 600; color: var(--text-primary);">${emp.cliente} - R$ ${emp.valor}</div>
                         <div style="font-size: 12px; color: var(--text-secondary);">Taxa: ${empTaxa}% ao dia | Vencimento: ${empVenc}</div>
                     </div>
@@ -3396,9 +3441,9 @@
             dropdown.style.display = 'block';
         }
 
-        function selecionarEmprestimoPagamento(display, cliente, valor) {
+        function selecionarEmprestimoPagamento(display, emprestimoId) {
             document.getElementById('busca-emprestimo-pagamento').value = display;
-            document.getElementById('emprestimo-selecionado-pagamento').value = cliente + ' - ' + valor;
+            document.getElementById('emprestimo-selecionado-pagamento').value = emprestimoId;
             document.getElementById('dropdown-emprestimos').style.display = 'none';
         }
 
