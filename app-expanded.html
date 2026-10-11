@@ -3332,14 +3332,12 @@
             emprestimos.push(novoEmprestimo);
             localStorage.setItem('emprestimos', JSON.stringify(emprestimos));
 
-            // Atualizar gráficos e estatísticas
             updateCharts();
             atualizarEstatisticas();
+            renderizarEmprestimos();
 
-            // Mostrar mensagem de sucesso
             alert('✅ Empréstimo criado com sucesso!\n\nCliente: ' + novoEmprestimo.cliente + '\nValor: R$ ' + novoEmprestimo.valor + '\nTaxa: ' + novoEmprestimo.taxa + '% ao dia\nVencimento: ' + novoEmprestimo.vencimento);
 
-            // Voltar para perfil do cliente
             showPage('perfilCliente', event);
         }
 
