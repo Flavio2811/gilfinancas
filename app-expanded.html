@@ -2036,20 +2036,32 @@
                     fetch('/payments', { headers })
                 ]);
 
-                // Usa _origLocalStorageSet para evitar loop de sync ao carregar do servidor
                 const _set = localStorage._origSet || localStorage.setItem.bind(localStorage);
-                if (clientesRes.ok) {
-                    const clientes = await clientesRes.json();
-                    _set('clientes', JSON.stringify(clientes));
+
+                async function sincronizarDado(res, chave, endpoint) {
+                    if (!res.ok) return;
+                    const dadosServidor = await res.json();
+                    const dadosLocais = JSON.parse(localStorage.getItem(chave) || '[]');
+
+                    if (dadosServidor.length > 0) {
+                        // Servidor tem dados: usa os dados do servidor
+                        _set(chave, JSON.stringify(dadosServidor));
+                    } else if (dadosLocais.length > 0) {
+                        // Servidor perdeu os dados (cold start): recoloca os dados locais no servidor
+                        fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                            body: JSON.stringify(dadosLocais)
+                        }).catch(() => {});
+                        // Mantém o localStorage como está
+                    }
                 }
-                if (emprestimosRes.ok) {
-                    const emprestimos = await emprestimosRes.json();
-                    _set('emprestimos', JSON.stringify(emprestimos));
-                }
-                if (pagamentosRes.ok) {
-                    const pagamentos = await pagamentosRes.json();
-                    _set('pagamentos', JSON.stringify(pagamentos));
-                }
+
+                await Promise.all([
+                    sincronizarDado(clientesRes, 'clientes', '/clients'),
+                    sincronizarDado(emprestimosRes, 'emprestimos', '/loans'),
+                    sincronizarDado(pagamentosRes, 'pagamentos', '/payments')
+                ]);
             } catch (error) {
                 console.error('Erro ao carregar dados do servidor:', error);
             }
