@@ -680,7 +680,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <div id="loading" class="loading">
+    <div id="loading" class="loading hidden">
         <div class="spinner"></div>
         <span>Carregando Gil.Finanças PRO...</span>
     </div>
@@ -2704,22 +2704,15 @@
         }
 
         window.addEventListener('load', () => {
-            setTimeout(() => {
+            try {
                 document.getElementById('loading').classList.add('hidden');
-
-                // Verifica se já está logado
                 const token = localStorage.getItem('token');
                 if (token) {
-                    // Já está logado, mostra dashboard
                     document.getElementById('login-page').classList.add('hidden');
                     showPage('dashboard');
-                    // Carrega os gráficos logo após mostrar o dashboard
                     setTimeout(loadChartJS, 200);
-                } else {
-                    // Não está logado, mostra login
-                    document.getElementById('login-page').classList.remove('hidden');
                 }
-            }, 1500);
+            } catch(e) {}
         });
 
         function abrirPerfilCliente(nome, email, telefone, whatsapp) {
