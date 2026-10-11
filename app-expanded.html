@@ -2066,12 +2066,20 @@
 
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
+            const pagMapStats = {};
+            pagamentos.forEach(function(p) {
+                const key = String(p.emprestimo_id);
+                if (!pagMapStats[key]) pagMapStats[key] = 0;
+                pagMapStats[key] += parseFloat(p.valor) || 0;
+            });
             const totalEmAtraso = emprestimos
-                .filter(e => {
+                .filter(function(e) {
                     const venc = new Date((e.vencimento || '') + 'T00:00:00');
-                    return venc < hoje && !pagamentos.find(p => p.emprestimo_id === e.id);
+                    if (venc >= hoje) return false;
+                    const totalPagoEmp = pagMapStats[String(e.id)] || 0;
+                    return totalPagoEmp < parseFloat(e.valor || 0);
                 })
-                .reduce((sum, e) => sum + (parseFloat(e.valor) || 0), 0);
+                .reduce(function(sum, e) { return sum + (parseFloat(e.valor) || 0); }, 0);
 
             const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
@@ -2523,7 +2531,7 @@
 
             const novoPagamento = {
                 id: Date.now(),
-                emprestimo_id: parseInt(emprestimoId) || emprestimoId,
+                emprestimo_id: emprestimoId,
                 valor: valor.toFixed(2),
                 data_pagamento: data,
                 metodo
@@ -2535,6 +2543,9 @@
 
             atualizarEstatisticas();
             renderizarPagamentos();
+            renderizarEmprestimos();
+            renderizarCobrancas();
+            if (typeof updateCharts === 'function') updateCharts();
 
             e.target.reset();
             document.getElementById('busca-emprestimo-pagamento').value = '';
@@ -3355,34 +3366,56 @@
 
             const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
             const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
+            const pagamentos = JSON.parse(localStorage.getItem('pagamentos') || '[]');
 
             if (emprestimos.length === 0) {
                 listaEmprestimos.innerHTML = '<p style="color: var(--text-secondary);">Nenhum empréstimo registrado</p>';
                 return;
             }
 
+            const pagMapEmp = {};
+            pagamentos.forEach(function(p) {
+                const key = String(p.emprestimo_id);
+                if (!pagMapEmp[key]) pagMapEmp[key] = 0;
+                pagMapEmp[key] += parseFloat(p.valor) || 0;
+            });
+
             let html = '';
-            emprestimos.forEach(emp => {
-                const cliente = clientes.find(c => c.nome === emp.cliente);
+            emprestimos.forEach(function(emp) {
+                const cliente = clientes.find(function(c) { return c.nome === emp.cliente; });
                 const vencimento = emp.vencimento || emp.data_vencimento || '';
                 const taxa = emp.taxa !== undefined ? emp.taxa : (emp.taxa_juros !== undefined ? emp.taxa_juros : '');
                 const tipoRaw = emp.tipo || emp.tipo_juros || '';
                 const hojeEmp = new Date(); hojeEmp.setHours(0,0,0,0);
                 const vencDate = vencimento ? new Date(vencimento + 'T00:00:00') : null;
-                const badgeClass = vencDate && vencDate < hojeEmp ? 'badge-danger' : 'badge-success';
-                const badgeTexto = vencDate && vencDate < hojeEmp ? '⚠️ Vencido' : '✓ Ativo';
 
-                const clienteEmail = cliente?.email || '';
-                const clienteTelefone = cliente?.telefone || '';
-                const clienteWhatsapp = cliente?.whatsapp || '';
+                const totalPago = pagMapEmp[String(emp.id)] || 0;
+                const valorEmp = parseFloat(emp.valor) || 0;
+                const quitado = totalPago >= valorEmp && valorEmp > 0;
 
+                let badgeClass, badgeTexto;
+                if (quitado) {
+                    badgeClass = 'badge-success';
+                    badgeTexto = '💚 Pago';
+                } else if (vencDate && vencDate < hojeEmp) {
+                    badgeClass = 'badge-danger';
+                    badgeTexto = '⚠️ Vencido';
+                } else {
+                    badgeClass = 'badge-success';
+                    badgeTexto = '✓ Ativo';
+                }
+
+                const clienteEmail = cliente ? (cliente.email || '') : '';
+                const clienteTelefone = cliente ? (cliente.telefone || '') : '';
+                const clienteWhatsapp = cliente ? (cliente.whatsapp || '') : '';
                 const tipoJuros = tipoRaw ? tipoRaw.charAt(0).toUpperCase() + tipoRaw.slice(1) : 'Não especificado';
+
                 html += `
                     <div class="item-card" style="cursor: pointer;" onclick="abrirPerfilCliente('${emp.cliente}', '${clienteEmail}', '${clienteTelefone}', '${clienteWhatsapp}')">
-                        <div class="item-name">${emp.cliente} - R$ ${emp.valor}</div>
+                        <div class="item-name">${emp.cliente} - R$ ${parseFloat(emp.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
                         <div class="item-detail">Taxa: ${taxa}% ao dia (${tipoJuros})</div>
-                        <div class="item-detail">Juros Acumulados: R$ ${emp.jurosAcumulados || '0.00'}</div>
-                        <div class="item-detail">Próximo Vencimento: ${vencimento}</div>
+                        <div class="item-detail">Pago: R$ ${totalPago.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${valorEmp.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                        <div class="item-detail">Vencimento: ${vencimento || 'N/A'}</div>
                         <span class="badge ${badgeClass}">${badgeTexto}</span>
                     </div>
                 `;
@@ -3403,14 +3436,17 @@
             }
 
             let html = '';
-            clientes.forEach(cliente => {
+            clientes.forEach(function(cliente) {
+                const statusBadge = (cliente.status || 'Ativo').toLowerCase() === 'inativo'
+                    ? '<span class="badge badge-danger">✗ Inativo</span>'
+                    : '<span class="badge badge-success">✓ Ativo</span>';
                 html += `
-                    <div class="item-card cliente-item" data-nome="${cliente.nome}" data-email="${cliente.email}" data-telefone="${cliente.telefone}" onclick="abrirPerfilCliente('${cliente.nome}', '${cliente.email}', '${cliente.telefone}', '${cliente.whatsapp || ''}')" style="cursor: pointer;">
+                    <div class="item-card cliente-item" data-nome="${cliente.nome}" data-email="${cliente.email || ''}" data-telefone="${cliente.telefone || ''}" onclick="abrirPerfilCliente('${cliente.nome}', '${cliente.email || ''}', '${cliente.telefone || ''}', '${cliente.whatsapp || ''}')" style="cursor: pointer;">
                         <div class="item-name">${cliente.nome}</div>
-                        <div class="item-detail">📧 ${cliente.email}</div>
-                        <div class="item-detail">📱 ${cliente.telefone}</div>
+                        <div class="item-detail">📧 ${cliente.email || 'N/A'}</div>
+                        <div class="item-detail">📱 ${cliente.telefone || 'N/A'}</div>
                         <div class="item-detail">💬 ${cliente.whatsapp || 'N/A'}</div>
-                        <span class="badge badge-success">✓ Ativo</span>
+                        ${statusBadge}
                     </div>
                 `;
             });
@@ -3432,12 +3468,13 @@
 
             let html = '';
             pagamentos.forEach(pag => {
-                const emprestimo = emprestimos.find(e => e.id === pag.emprestimo_id);
+                const emprestimo = emprestimos.find(function(e) { return String(e.id) === String(pag.emprestimo_id); });
                 html += `
                     <div class="item-card" style="cursor: pointer;">
-                        <div class="item-name">Pagamento - R$ ${pag.valor}</div>
-                        <div class="item-detail">Cliente: ${emprestimo?.cliente || 'N/A'}</div>
+                        <div class="item-name">Pagamento - R$ ${parseFloat(pag.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                        <div class="item-detail">Cliente: ${emprestimo ? emprestimo.cliente : 'N/A'}</div>
                         <div class="item-detail">Data: ${pag.data_pagamento}</div>
+                        <div class="item-detail">Método: ${pag.metodo || 'N/A'}</div>
                         <span class="badge badge-success">✓ Concluído</span>
                     </div>
                 `;
@@ -3456,13 +3493,14 @@
             const hoje = new Date(); hoje.setHours(0,0,0,0);
             const pagMapCobranca = {};
             pagamentosCobranca.forEach(function(p) {
-                if (!pagMapCobranca[p.emprestimo_id]) pagMapCobranca[p.emprestimo_id] = 0;
-                pagMapCobranca[p.emprestimo_id] += parseFloat(p.valor) || 0;
+                const key = String(p.emprestimo_id);
+                if (!pagMapCobranca[key]) pagMapCobranca[key] = 0;
+                pagMapCobranca[key] += parseFloat(p.valor) || 0;
             });
             const cobrancasPendentes = emprestimos.filter(function(e) {
                 if (!e.vencimento) return false;
                 if (new Date(e.vencimento + 'T00:00:00') >= hoje) return false;
-                const totalPago = pagMapCobranca[e.id] || 0;
+                const totalPago = pagMapCobranca[String(e.id)] || 0;
                 return totalPago < parseFloat(e.valor || 0);
             });
 
@@ -3579,11 +3617,11 @@
                 return;
             }
 
-            const emprestimosFiltrados = emprestimos.filter(emp =>
-                emp.cliente.toLowerCase().includes(pesquisa) ||
-                emp.valor.toString().includes(pesquisa) ||
-                emp.taxa.toString().includes(pesquisa)
-            );
+            const emprestimosFiltrados = emprestimos.filter(function(emp) {
+                return (emp.cliente || '').toLowerCase().includes(pesquisa) ||
+                    String(emp.valor || '').includes(pesquisa) ||
+                    String(emp.taxa !== undefined ? emp.taxa : (emp.taxa_juros || '')).includes(pesquisa);
+            });
 
             if (emprestimosFiltrados.length === 0) {
                 dropdown.innerHTML = '<p style="padding: 10px; color: var(--text-secondary);">Nenhum empréstimo encontrado</p>';
