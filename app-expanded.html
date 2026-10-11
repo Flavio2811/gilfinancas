@@ -1781,7 +1781,7 @@
                 document.getElementById('email').value = email;
                 document.getElementById('senha').focus();
             } catch (error) {
-                alert('❌ Erro de conexão. Certifique-se que o servidor está rodando em http://localhost:5000');
+                alert('❌ Erro de conexão com o servidor. Verifique sua internet e tente novamente.');
                 console.error(error);
             }
         }
@@ -1816,41 +1816,13 @@
                 setTimeout(async () => {
                     await carregarDadosDoServidor(data.token);
 
-                    // Se não houver clientes após carregar, carregar dados de teste
-                    const clientes = JSON.parse(localStorage.getItem('clientes') || '[]');
-                    if (clientes.length === 0) {
-                        const dadosTeste = {
-                            clientes: [
-                                {id: 1, nome: "Ana Silva", email: "ana@example.com", telefone: "(11) 91234-5678", whatsapp: "(11) 91234-5678", endereco: "Rua das Flores, 123 - São Paulo, SP", status: "Ativo"},
-                                {id: 2, nome: "Bruno Costa", email: "bruno@example.com", telefone: "(21) 98765-4321", whatsapp: "(21) 98765-4321", endereco: "Av. Paulista, 456 - São Paulo, SP", status: "Ativo"},
-                                {id: 3, nome: "Carla Oliveira", email: "carla@example.com", telefone: "(31) 99876-5432", whatsapp: "(31) 99876-5432", endereco: "Rua Minas Gerais, 789 - Belo Horizonte, MG", status: "Ativo"},
-                                {id: 4, nome: "Diego Santos", email: "diego@example.com", telefone: "(41) 97654-3210", whatsapp: "(41) 97654-3210", endereco: "Av. Brasil, 321 - Curitiba, PR", status: "Ativo"},
-                                {id: 5, nome: "Elena Martins", email: "elena@example.com", telefone: "(51) 98543-2109", whatsapp: "(51) 98543-2109", endereco: "Rua Rio Grande, 654 - Porto Alegre, RS", status: "Ativo"}
-                            ],
-                            emprestimos: [
-                                {id: 1, cliente_id: 1, cliente: "Ana Silva", valor: 2500, taxa_juros: 2.5, tipo_juros: "ao dia", data_vencimento: "2026-12-31", status: "Ativo"},
-                                {id: 2, cliente_id: 2, cliente: "Bruno Costa", valor: 3500, taxa_juros: 2.0, tipo_juros: "ao dia", data_vencimento: "2026-11-30", status: "Ativo"},
-                                {id: 3, cliente_id: 3, cliente: "Carla Oliveira", valor: 1800, taxa_juros: 3.0, tipo_juros: "ao dia", data_vencimento: "2026-10-30", status: "Ativo"},
-                                {id: 4, cliente_id: 4, cliente: "Diego Santos", valor: 5000, taxa_juros: 2.2, tipo_juros: "ao dia", data_vencimento: "2026-12-15", status: "Ativo"}
-                            ],
-                            pagamentos: [
-                                {id: 1, emprestimo_id: 1, valor: 500, data_pagamento: "2026-10-05"},
-                                {id: 2, emprestimo_id: 2, valor: 700, data_pagamento: "2026-10-10"},
-                                {id: 3, emprestimo_id: 3, valor: 300, data_pagamento: "2026-10-08"}
-                            ]
-                        };
-                        localStorage.setItem('clientes', JSON.stringify(dadosTeste.clientes));
-                        localStorage.setItem('emprestimos', JSON.stringify(dadosTeste.emprestimos));
-                        localStorage.setItem('pagamentos', JSON.stringify(dadosTeste.pagamentos));
-                    }
-
                     atualizarEstatisticas();
                     loadChartJS();
                 }, 100);
                 updateDate();
                 renderCalendar();
             } catch (error) {
-                alert('❌ Erro de conexão. Certifique-se que o servidor está rodando em http://localhost:5000');
+                alert('❌ Erro de conexão com o servidor. Verifique sua internet e tente novamente.');
                 console.error(error);
             }
         }
@@ -1865,17 +1837,19 @@
                     fetch('/payments', { headers })
                 ]);
 
+                // Usa _origLocalStorageSet para evitar loop de sync ao carregar do servidor
+                const _set = localStorage._origSet || localStorage.setItem.bind(localStorage);
                 if (clientesRes.ok) {
                     const clientes = await clientesRes.json();
-                    localStorage.setItem('clientes', JSON.stringify(clientes));
+                    _set('clientes', JSON.stringify(clientes));
                 }
                 if (emprestimosRes.ok) {
                     const emprestimos = await emprestimosRes.json();
-                    localStorage.setItem('emprestimos', JSON.stringify(emprestimos));
+                    _set('emprestimos', JSON.stringify(emprestimos));
                 }
                 if (pagamentosRes.ok) {
                     const pagamentos = await pagamentosRes.json();
-                    localStorage.setItem('pagamentos', JSON.stringify(pagamentos));
+                    _set('pagamentos', JSON.stringify(pagamentos));
                 }
             } catch (error) {
                 console.error('Erro ao carregar dados do servidor:', error);
@@ -1885,6 +1859,8 @@
         function logout() {
             if (confirm('Deseja sair?')) {
                 isLogged = false;
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
                 document.getElementById('app-page').classList.add('hidden');
                 document.getElementById('login-page').classList.remove('hidden');
                 document.getElementById('email').value = '';
@@ -3525,7 +3501,7 @@
             inicializarFiltroCalendario();
             setTimeout(() => {
                 const token = localStorage.getItem('token');
-                const userData = localStorage.getItem('userData');
+                const userData = localStorage.getItem('user');
 
                 if (token && userData) {
                     const user = JSON.parse(userData);
@@ -3552,16 +3528,17 @@
         // Sincroniza dados do app com a conta do usuário no servidor automaticamente
         (function() {
             const _origSet = localStorage.setItem.bind(localStorage);
+            localStorage._origSet = _origSet; // exposto para carregarDadosDoServidor evitar loop
             const syncMap = { clientes: '/clients', emprestimos: '/loans', pagamentos: '/payments' };
             localStorage.setItem = function(key, value) {
                 _origSet(key, value);
                 const endpoint = syncMap[key];
                 if (endpoint) {
-                    const token = localStorage.getItem('token');
-                    if (token) {
+                    const tk = localStorage.getItem('token');
+                    if (tk) {
                         fetch(endpoint, {
                             method: 'POST',
-                            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                            headers: { 'Authorization': 'Bearer ' + tk, 'Content-Type': 'application/json' },
                             body: value
                         }).catch(() => {});
                     }

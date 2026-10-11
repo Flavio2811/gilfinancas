@@ -5,7 +5,7 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = "seu_secret_key_super_seguro_2026";
+const JWT_SECRET = process.env.JWT_SECRET || "seu_secret_key_super_seguro_2026";
 
 let usuarios = [
   {
