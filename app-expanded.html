@@ -59,11 +59,131 @@
         .login-container {
             display: flex;
             min-height: 100vh;
-            background: linear-gradient(135deg, rgba(27, 127, 94, 0.9) 0%, rgba(45, 158, 123, 0.9) 100%),
-                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs><rect width="1200" height="600" fill="url(%23grid)"/></svg>');
-            background-size: cover, auto;
-            background-position: center, center;
-            background-attachment: fixed;
+            background: white;
+        }
+
+        .login-panel {
+            width: 55%;
+            background: linear-gradient(145deg, #0a2e1f 0%, #155c42 45%, #1e8f66 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 56px 64px 48px;
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        .login-panel::before {
+            content: '';
+            position: absolute;
+            top: -120px;
+            right: -120px;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            pointer-events: none;
+        }
+
+        .login-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -140px;
+            left: -80px;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+            pointer-events: none;
+        }
+
+        .login-panel-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.08);
+            pointer-events: none;
+        }
+
+        .login-panel-brand-logo {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: white;
+        }
+
+        .login-panel h1 {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0 0 10px;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+
+        .login-panel-subtitle {
+            font-size: 15px;
+            color: rgba(255,255,255,0.65);
+            margin: 0 0 48px;
+            line-height: 1.5;
+        }
+
+        .login-features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .login-feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .login-feature-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .login-feature-text strong {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .login-feature-text span {
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.4;
+        }
+
+        .login-panel-chart {
+            width: 100%;
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        .login-panel-footer {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            margin-top: 20px;
         }
 
         .login-left {
@@ -72,6 +192,13 @@
             align-items: center;
             justify-content: center;
             padding: 40px;
+            background: #f2f5f3;
+        }
+
+        @media (max-width: 900px) {
+            .login-panel { display: none; }
+            .login-left { background: linear-gradient(145deg, #0a2e1f 0%, #1e8f66 100%); }
+            .login-card { background: rgba(255,255,255,0.97); }
         }
 
         .login-card {
@@ -687,6 +814,78 @@
 
     <!-- LOGIN/SIGNUP -->
     <div id="login-page" class="login-container">
+
+        <!-- PAINEL ESQUERDO DECORATIVO -->
+        <div class="login-panel">
+            <!-- Anéis decorativos -->
+            <div class="login-panel-ring" style="width:220px;height:220px;top:120px;right:-60px;"></div>
+            <div class="login-panel-ring" style="width:120px;height:120px;bottom:200px;right:60px;"></div>
+            <div class="login-panel-ring" style="width:80px;height:80px;top:60px;left:40px;border-color:rgba(255,255,255,0.06)"></div>
+
+            <!-- Marca -->
+            <div>
+                <div class="login-panel-brand-logo">G</div>
+                <h1>Gil.Finanças PRO</h1>
+                <p class="login-panel-subtitle">Sistema completo de gestão financeira para profissionais do mercado</p>
+
+                <!-- Features -->
+                <div class="login-features-list">
+                    <div class="login-feature">
+                        <div class="login-feature-icon">📊</div>
+                        <div class="login-feature-text">
+                            <strong>Dashboard Inteligente</strong>
+                            <span>Visão completa das suas finanças em tempo real</span>
+                        </div>
+                    </div>
+                    <div class="login-feature">
+                        <div class="login-feature-icon">👥</div>
+                        <div class="login-feature-text">
+                            <strong>Gestão de Clientes</strong>
+                            <span>Cadastro e acompanhamento completo dos seus clientes</span>
+                        </div>
+                    </div>
+                    <div class="login-feature">
+                        <div class="login-feature-icon">💰</div>
+                        <div class="login-feature-text">
+                            <strong>Controle de Empréstimos</strong>
+                            <span>Parcelas, juros e vencimentos calculados automaticamente</span>
+                        </div>
+                    </div>
+                    <div class="login-feature">
+                        <div class="login-feature-icon">🔔</div>
+                        <div class="login-feature-text">
+                            <strong>Cobranças Automáticas</strong>
+                            <span>Notificações e lembretes inteligentes de pagamento</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico decorativo SVG -->
+            <div>
+                <svg class="login-panel-chart" viewBox="0 0 460 100" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Barras crescentes -->
+                    <rect x="0"   y="72" width="34" height="28" rx="5" fill="rgba(255,255,255,0.10)"/>
+                    <rect x="46"  y="56" width="34" height="44" rx="5" fill="rgba(255,255,255,0.14)"/>
+                    <rect x="92"  y="48" width="34" height="52" rx="5" fill="rgba(255,255,255,0.12)"/>
+                    <rect x="138" y="32" width="34" height="68" rx="5" fill="rgba(255,255,255,0.18)"/>
+                    <rect x="184" y="38" width="34" height="62" rx="5" fill="rgba(255,255,255,0.14)"/>
+                    <rect x="230" y="18" width="34" height="82" rx="5" fill="rgba(255,255,255,0.22)"/>
+                    <rect x="276" y="24" width="34" height="76" rx="5" fill="rgba(255,255,255,0.18)"/>
+                    <rect x="322" y="8"  width="34" height="92" rx="5" fill="rgba(255,255,255,0.26)"/>
+                    <rect x="368" y="4"  width="34" height="96" rx="5" fill="rgba(255,255,255,0.30)"/>
+                    <!-- Linha de tendência -->
+                    <polyline points="17,72 63,52 109,44 155,28 201,34 247,14 293,20 339,4 385,0"
+                        fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Pontos na linha -->
+                    <circle cx="17"  cy="72" r="3.5" fill="rgba(255,255,255,0.7)"/>
+                    <circle cx="155" cy="28" r="3.5" fill="rgba(255,255,255,0.7)"/>
+                    <circle cx="385" cy="0"  r="4"   fill="white"/>
+                </svg>
+                <p class="login-panel-footer">© 2026 Gil.Finanças PRO · Todos os direitos reservados</p>
+            </div>
+        </div>
+
         <div class="login-left">
             <!-- TELA DE LOGIN -->
             <div id="login-form" class="login-card">
