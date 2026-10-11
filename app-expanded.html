@@ -1987,8 +1987,9 @@
         function logout() {
             if (confirm('Deseja sair?')) {
                 isLogged = false;
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                ['token', 'user', 'clientes', 'emprestimos', 'pagamentos', 'config-empresa', 'fotoPerfil'].forEach(function(k) {
+                    localStorage.removeItem(k);
+                });
                 document.getElementById('app-page').classList.add('hidden');
                 document.getElementById('login-page').classList.remove('hidden');
                 document.getElementById('email').value = '';
@@ -2062,7 +2063,7 @@
             hoje.setHours(0, 0, 0, 0);
             const totalEmAtraso = emprestimos
                 .filter(e => {
-                    const venc = new Date(e.vencimento);
+                    const venc = new Date((e.vencimento || '') + 'T00:00:00');
                     return venc < hoje && !pagamentos.find(p => p.emprestimo_id === e.id);
                 })
                 .reduce((sum, e) => sum + (parseFloat(e.valor) || 0), 0);
@@ -2073,13 +2074,11 @@
             const elCapital = document.getElementById('total-capital');
             const elReceber = document.getElementById('total-receber');
             const elAtraso = document.getElementById('total-atraso');
-            const elRecebido = document.getElementById('cliente-total-recebido');
 
             if (elClientes) elClientes.textContent = totalClientes;
             if (elCapital) elCapital.textContent = fmt(totalEmprestado);
             if (elReceber) elReceber.textContent = fmt(totalAReceber);
             if (elAtraso) elAtraso.textContent = fmt(totalEmAtraso);
-            if (elRecebido) elRecebido.textContent = fmt(totalPago);
 
             // Atualizar stat-change com dados reais do mês atual
             const mesAtual = hoje.getMonth();
@@ -3054,79 +3053,6 @@
             } catch(e) {}
         });
 
-        function abrirPerfilCliente(nome, email, telefone, whatsapp) {
-            // Preencher informações do cliente
-            document.getElementById('cliente-nome').textContent = nome;
-            document.getElementById('cliente-email').textContent = email;
-            document.getElementById('cliente-telefone').textContent = telefone;
-            document.getElementById('cliente-whatsapp').textContent = whatsapp;
-
-            // Simular empréstimos do cliente
-            let emprestimosHTML = '';
-            if (nome === 'João Silva') {
-                emprestimosHTML = `
-                    <div style="padding: 15px; background: var(--bg-gray); border-radius: 8px;">
-                        <p style="font-weight: 600;">R$ 2.500,00</p>
-                        <p style="font-size: 13px; color: var(--text-secondary);">Taxa: 1% ao dia | Simples</p>
-                        <p style="font-size: 13px; color: var(--text-secondary);">Vencimento: 15/10/2026</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 5px;">Juros Acumulados: R$ 50,00</p>
-                    </div>
-                `;
-                document.getElementById('cliente-total-emprestado').textContent = 'R$ 2.500,00';
-                document.getElementById('cliente-total-recebido').textContent = 'R$ 1.000,00';
-            } else if (nome === 'Maria Santos') {
-                emprestimosHTML = `
-                    <div style="padding: 15px; background: var(--bg-gray); border-radius: 8px;">
-                        <p style="font-weight: 600;">R$ 5.000,00</p>
-                        <p style="font-size: 13px; color: var(--text-secondary);">Taxa: 2% ao dia | Compostos</p>
-                        <p style="font-size: 13px; color: var(--text-secondary);">Vencimento: 20/10/2026</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 5px;">Juros Acumulados: R$ 120,00</p>
-                    </div>
-                `;
-                document.getElementById('cliente-total-emprestado').textContent = 'R$ 5.000,00';
-                document.getElementById('cliente-total-recebido').textContent = 'R$ 2.500,00';
-            } else if (nome === 'Pedro Costa') {
-                emprestimosHTML = `
-                    <div style="padding: 15px; background: var(--bg-gray); border-radius: 8px;">
-                        <p style="font-weight: 600;">R$ 8.000,00</p>
-                        <p style="font-size: 13px; color: var(--text-secondary);">Taxa: 1% ao dia | Simples</p>
-                        <p style="font-size: 13px; color: var(--text-secondary);">Vencimento: 05/10/2026 (⚠️ ATRASADO)</p>
-                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 5px;">Juros Acumulados: R$ 160,00</p>
-                    </div>
-                `;
-                document.getElementById('cliente-total-emprestado').textContent = 'R$ 8.000,00';
-                document.getElementById('cliente-total-recebido').textContent = 'R$ 1.500,00';
-            }
-
-            // Pagamentos do cliente
-            let pagamentosHTML = '';
-            if (nome === 'João Silva') {
-                pagamentosHTML = `<div style="padding: 15px; background: var(--bg-gray); border-radius: 8px;">
-                    <p style="font-weight: 600;">R$ 1.000,00</p>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Data: 08/10/2026 | Método: PIX</p>
-                    <span class="badge badge-success">Confirmado</span>
-                </div>`;
-            } else if (nome === 'Maria Santos') {
-                pagamentosHTML = `<div style="padding: 15px; background: var(--bg-gray); border-radius: 8px;">
-                    <p style="font-weight: 600;">R$ 2.500,00</p>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Data: 07/10/2026 | Método: Transferência</p>
-                    <span class="badge badge-success">Confirmado</span>
-                </div>`;
-            } else if (nome === 'Pedro Costa') {
-                pagamentosHTML = `<div style="padding: 15px; background: var(--bg-gray); border-radius: 8px;">
-                    <p style="font-weight: 600;">R$ 1.500,00</p>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Data: 05/10/2026 | Método: Dinheiro</p>
-                    <span class="badge badge-success">Confirmado</span>
-                </div>`;
-            }
-
-            document.getElementById('cliente-emprestimos').innerHTML = emprestimosHTML || '<p style="color: var(--text-secondary);">Nenhum empréstimo encontrado</p>';
-            document.getElementById('cliente-pagamentos').innerHTML = pagamentosHTML || '<p style="color: var(--text-secondary);">Nenhum pagamento registrado</p>';
-
-            // Abrir página do perfil
-            showPage('perfilCliente');
-        }
-
         let clienteEmprestimoAtual = {};
         let clientePerfilAtual = {};
 
@@ -3173,8 +3099,24 @@
             }
 
             document.getElementById('cliente-emprestimos').innerHTML = emprestimosHTML;
-            document.getElementById('cliente-total-emprestado').textContent = 'R$ ' + totalEmprestado.toFixed(2);
-            document.getElementById('cliente-total-recebido').textContent = 'R$ 0,00';
+
+            // Buscar pagamentos reais deste cliente
+            const pagamentosLS = JSON.parse(localStorage.getItem('pagamentos') || '[]');
+            const idsEmprestimosCliente = emprestimosCliente.map(function(e) { return e.id; });
+            const pagamentosCliente = pagamentosLS.filter(function(p) { return idsEmprestimosCliente.includes(p.emprestimo_id); });
+            const totalRecebido = pagamentosCliente.reduce(function(sum, p) { return sum + (parseFloat(p.valor) || 0); }, 0);
+
+            let pagamentosHTML = '';
+            pagamentosCliente.forEach(function(p) {
+                const valFmt = parseFloat(p.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                pagamentosHTML += '<div style="padding: 15px; background: var(--bg-gray); border-radius: 8px;">' +
+                    '<p style="font-weight: 600;">R$ ' + valFmt + '</p>' +
+                    '<p style="font-size: 13px; color: var(--text-secondary);">Data: ' + (p.data_pagamento || '') + ' | Método: ' + (p.metodo || '') + '</p>' +
+                    '<span class="badge badge-success">Confirmado</span></div>';
+            });
+            document.getElementById('cliente-pagamentos').innerHTML = pagamentosHTML || '<p style="color: var(--text-secondary);">Nenhum pagamento registrado</p>';
+            document.getElementById('cliente-total-emprestado').textContent = 'R$ ' + totalEmprestado.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('cliente-total-recebido').textContent = 'R$ ' + totalRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
             // Abrir página do perfil
             showPage('perfilCliente', event);
@@ -3226,8 +3168,10 @@
                 return;
             }
 
-            // Calcular juros acumulados (simples para demonstração)
-            const jurosAcumulados = (valor * taxa * 10) / 100;
+            // Calcular juros acumulados para 30 dias
+            const jurosAcumulados = tipo === 'compostos'
+                ? (valor * Math.pow(1 + taxa / 100, 30) - valor)
+                : (valor * taxa / 100 * 30);
 
             // Criar objeto de novo empréstimo
             const novoEmprestimo = {
