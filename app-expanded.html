@@ -3237,8 +3237,10 @@
                 const vencimento = emp.vencimento || emp.data_vencimento || '';
                 const taxa = emp.taxa !== undefined ? emp.taxa : (emp.taxa_juros !== undefined ? emp.taxa_juros : '');
                 const tipoRaw = emp.tipo || emp.tipo_juros || '';
-                const badgeClass = vencimento && new Date(vencimento) < new Date() ? 'badge-danger' : 'badge-success';
-                const badgeTexto = vencimento && new Date(vencimento) < new Date() ? '⚠️ Vencido' : '✓ Ativo';
+                const hojeEmp = new Date(); hojeEmp.setHours(0,0,0,0);
+                const vencDate = vencimento ? new Date(vencimento + 'T00:00:00') : null;
+                const badgeClass = vencDate && vencDate < hojeEmp ? 'badge-danger' : 'badge-success';
+                const badgeTexto = vencDate && vencDate < hojeEmp ? '⚠️ Vencido' : '✓ Ativo';
 
                 const clienteEmail = cliente?.email || '';
                 const clienteTelefone = cliente?.telefone || '';
@@ -3775,8 +3777,8 @@
         }
 
         function filtrarPorLetra(letra) {
-            const items = document.querySelectorAll('.item-card');
-            const buttons = document.querySelectorAll('.btn-filter');
+            const items = document.querySelectorAll('#lista-clientes .item-card');
+            const buttons = document.querySelectorAll('#filtro-alfabetico .btn-filter');
 
             buttons.forEach(btn => {
                 btn.style.backgroundColor = 'transparent';
@@ -3790,14 +3792,10 @@
             }
 
             items.forEach(item => {
-                const nome = item.querySelector('.item-name').textContent;
-                const primeiraLetra = nome.charAt(0).toUpperCase();
-
-                if (letra === 'TODOS' || primeiraLetra === letra) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
+                const nomeEl = item.querySelector('.item-name');
+                if (!nomeEl) return;
+                const primeiraLetra = nomeEl.textContent.charAt(0).toUpperCase();
+                item.style.display = (letra === 'TODOS' || primeiraLetra === letra) ? 'block' : 'none';
             });
         }
 
