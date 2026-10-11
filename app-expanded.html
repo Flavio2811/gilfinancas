@@ -385,7 +385,7 @@
             align-items: center;
             gap: 12px;
             padding: 12px 20px;
-            color: var(--text-secondary);
+            color: var(--text-sidebar);
             text-decoration: none;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -2088,6 +2088,10 @@
 
             if (pageName === 'cobrancas') {
                 setTimeout(renderizarCobrancas, 100);
+            }
+
+            if (pageName === 'dashboard') {
+                setTimeout(loadChartJS, 100);
             }
 
             if (pageName === 'relatorios') {
