@@ -1403,7 +1403,7 @@
                         </div>
                         <div class="form-group">
                             <label>Data do Empréstimo</label>
-                            <input type="date" id="novo-data" value="2026-10-10">
+                            <input type="date" id="novo-data">
                         </div>
                     </div>
 
@@ -1452,21 +1452,7 @@
                 </div>
 
                 <div class="items-grid" id="eventos-calendario">
-                    <div class="item-card" data-cliente="Pedro Costa">
-                        <div class="item-name">🔔 05/10 - Vencimento Pedro Costa</div>
-                        <div class="item-detail">Empréstimo de R$ 8.000</div>
-                        <div class="item-detail">Status: <strong>⚠️ Atrasado</strong></div>
-                    </div>
-                    <div class="item-card" data-cliente="João Silva">
-                        <div class="item-name">🔔 15/10 - Vencimento João Silva</div>
-                        <div class="item-detail">Empréstimo de R$ 2.500</div>
-                        <div class="item-detail">Status: <strong>⏳ Próximo</strong></div>
-                    </div>
-                    <div class="item-card" data-cliente="Maria Santos">
-                        <div class="item-name">🔔 20/10 - Vencimento Maria Santos</div>
-                        <div class="item-detail">Empréstimo de R$ 5.000</div>
-                        <div class="item-detail">Status: <strong>⏳ Próximo</strong></div>
-                    </div>
+                    <p style="color: var(--text-secondary);">Nenhum vencimento este mês</p>
                 </div>
             </div>
 
@@ -2046,7 +2032,7 @@
             }
 
             if (pageName === 'calendario') {
-                setTimeout(renderCalendar, 100);
+                setTimeout(function() { renderCalendar(); renderizarEventosCalendario(); }, 100);
             }
 
             if (pageName === 'perfil') {
@@ -2250,12 +2236,28 @@
             const calendarGrid = document.getElementById('calendar-grid');
             calendarGrid.innerHTML = '';
 
-            // Mapa de eventos com datas e clientes
-            const eventosMap = {
-                5: { cliente: 'Pedro Costa', valor: 'R$ 8.000', status: '⚠️ Atrasado' },
-                15: { cliente: 'João Silva', valor: 'R$ 2.500', status: '⏳ Próximo' },
-                20: { cliente: 'Maria Santos', valor: 'R$ 5.000', status: '⏳ Próximo' }
-            };
+            // Build eventosMap from real empréstimos in localStorage
+            const emprestimosCalendario = JSON.parse(localStorage.getItem('emprestimos') || '[]');
+            const hojeCalendario = new Date(); hojeCalendario.setHours(0, 0, 0, 0);
+            const eventosMap = {};
+            emprestimosCalendario.forEach(function(e) {
+                if (!e.vencimento) return;
+                const v = new Date(e.vencimento + 'T00:00:00');
+                if (v.getFullYear() === year && v.getMonth() === month) {
+                    const d = v.getDate();
+                    const atrasado = v < hojeCalendario;
+                    if (!eventosMap[d]) {
+                        eventosMap[d] = {
+                            cliente: e.cliente,
+                            valor: 'R$ ' + parseFloat(e.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2}),
+                            status: atrasado ? '⚠️ Atrasado' : '⏳ Próximo',
+                            count: 1
+                        };
+                    } else {
+                        eventosMap[d].count++;
+                    }
+                }
+            });
 
             for (let i = 0; i < firstDay; i++) {
                 const emptyDay = document.createElement('div');
@@ -2282,7 +2284,7 @@
                     const evento = eventosMap[day];
                     dayEl.innerHTML = `
                         <div style="font-size: 14px; font-weight: bold; margin-bottom: 6px;">🔔 ${day}</div>
-                        <div style="font-size: 12px; font-weight: 600; line-height: 1.3;">${evento.cliente}</div>
+                        <div style="font-size: 12px; font-weight: 600; line-height: 1.3;">${evento.cliente}${evento.count > 1 ? ' +' + (evento.count - 1) : ''}</div>
                         <div style="font-size: 11px; line-height: 1.2; margin-top: 4px;">${evento.valor}</div>
                         <div style="font-size: 10px; margin-top: 4px;">${evento.status}</div>
                     `;
@@ -2301,14 +2303,46 @@
             }
         }
 
+        function renderizarEventosCalendario() {
+            const lista = document.getElementById('eventos-calendario');
+            if (!lista) return;
+            const emprestimos = JSON.parse(localStorage.getItem('emprestimos') || '[]');
+            const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            const doMes = emprestimos.filter(function(e) {
+                if (!e.vencimento) return false;
+                const v = new Date(e.vencimento + 'T00:00:00');
+                return v.getFullYear() === year && v.getMonth() === month;
+            });
+            if (doMes.length === 0) {
+                lista.innerHTML = '<p style="color: var(--text-secondary);">Nenhum vencimento este mês</p>';
+                return;
+            }
+            lista.innerHTML = doMes.map(function(e) {
+                const v = new Date(e.vencimento + 'T00:00:00');
+                const atrasado = v < hoje;
+                const dia = e.vencimento.split('-').reverse().join('/');
+                const status = atrasado ? '⚠️ Atrasado' : '⏳ Próximo';
+                const valor = 'R$ ' + parseFloat(e.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                return '<div class="item-card" data-cliente="' + e.cliente + '">' +
+                    '<div class="item-name">🔔 ' + dia + ' - Vencimento ' + e.cliente + '</div>' +
+                    '<div class="item-detail">Empréstimo de ' + valor + '</div>' +
+                    '<div class="item-detail">Status: <strong>' + status + '</strong></div>' +
+                    '</div>';
+            }).join('');
+        }
+
         function prevMonth() {
             currentMonth.setMonth(currentMonth.getMonth() - 1);
             renderCalendar();
+            renderizarEventosCalendario();
         }
 
         function nextMonth() {
             currentMonth.setMonth(currentMonth.getMonth() + 1);
             renderCalendar();
+            renderizarEventosCalendario();
         }
 
         function addCliente(e) {
@@ -2380,6 +2414,8 @@
                 <span class="badge badge-success">✓ ${cliente.status}</span>
             `;
 
+            const placeholder = listaCli.querySelector('p');
+            if (placeholder) placeholder.remove();
             listaCli.appendChild(clienteCard);
         }
 
@@ -3119,7 +3155,7 @@
             document.getElementById('novo-valor').value = '';
             document.getElementById('novo-taxa').value = '';
             document.getElementById('novo-tipo-juros').value = 'simples';
-            document.getElementById('novo-data').value = '2026-10-10';
+            document.getElementById('novo-data').value = new Date().toISOString().split('T')[0];
             document.getElementById('novo-vencimento').value = '';
 
             // Mostrar página de novo empréstimo
