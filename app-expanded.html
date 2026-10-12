@@ -4102,9 +4102,6 @@
 
                 if (token && userData) {
                     const user = JSON.parse(userData);
-                    const initials = (user.name || 'GF').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                    document.getElementById('avatar-initials').textContent = initials;
-                    document.getElementById('profile-avatar').textContent = initials;
                     document.getElementById('profile-name').value = user.name || '';
                     document.getElementById('profile-recovery-email-1').value = user.recoveryEmail1 || '';
                     document.getElementById('profile-recovery-email-2').value = user.recoveryEmail2 || '';
