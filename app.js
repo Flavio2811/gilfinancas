@@ -83,7 +83,7 @@ initDB().catch((err) => {
   console.error("Falha fatal na inicialização do banco:", err.message);
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.dirname(__filename)));
 
 app.get("/", (req, res) => {
