@@ -2054,7 +2054,7 @@
             }
 
             if (pageName === 'dashboard') {
-                setTimeout(loadChartJS, 100);
+                setTimeout(function() { atualizarEstatisticas(); loadChartJS(); }, 100);
             }
 
             if (pageName === 'relatorios') {
