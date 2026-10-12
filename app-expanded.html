@@ -790,6 +790,7 @@
         }
 
         @media (max-width: 768px) {
+            .app-container { flex-direction: column; }
             .sidebar {
                 width: 100%;
                 height: auto;
@@ -816,6 +817,7 @@
             .sidebar .user-section { display: none; }
             .main {
                 margin-left: 0;
+                padding: 16px;
             }
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
@@ -823,8 +825,10 @@
             .items-grid {
                 grid-template-columns: 1fr;
             }
+            .form-grid { grid-template-columns: 1fr !important; }
             .form-card { padding: 16px; }
             .content { padding: 16px; }
+            .chart-grid-2col { grid-template-columns: 1fr !important; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -1140,7 +1144,7 @@
                     <canvas id="chart-fluxo" height="300"></canvas>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+                <div class="chart-grid-2col" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 20px;">
                     <div class="chart-card">
                         <div class="chart-title">Distribuição de Empréstimos</div>
                         <canvas id="chart-distribuicao" height="300"></canvas>
@@ -1489,7 +1493,7 @@
                     <canvas id="chart-receita" height="300"></canvas>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+                <div class="chart-grid-2col" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr)); gap: 20px;">
                     <div class="chart-card">
                         <div class="chart-title">📈 Status dos Empréstimos</div>
                         <canvas id="chart-status" height="300"></canvas>
@@ -1501,11 +1505,12 @@
                 </div>
 
                 <div class="card">
-                    <h3 style="margin-bottom: 20px; font-size: 16px; font-weight: 600;">📥 Exportar Relatório</h3>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn-secondary" onclick="exportToCSV()">📊 Exportar para CSV</button>
-                        <button class="btn-secondary" onclick="exportToPDF()">📄 Exportar para PDF</button>
-                        <button class="btn-secondary" onclick="exportToExcel()">📋 Exportar para Excel</button>
+                    <h3 style="margin-bottom: 20px; font-size: 16px; font-weight: 600;">📥 Exportar Relatório Completo</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn-secondary" onclick="exportarTudoCSV()">📊 Exportar CSV</button>
+                        <button class="btn-secondary" onclick="exportToPDF()">📄 Exportar PDF</button>
+                        <button class="btn-secondary" onclick="exportarTudoExcel()">📋 Exportar Excel</button>
+                        <button class="btn-secondary" onclick="exportarTudoJSON()">💾 Backup JSON</button>
                     </div>
                 </div>
             </div>
@@ -2030,15 +2035,34 @@
             return String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
 
-        function showPage(pageName) {
+        const PAGE_TITLES = {
+            dashboard: 'Dashboard', clientes: 'Clientes', emprestimos: 'Empréstimos',
+            pagamentos: 'Pagamentos', cobrancas: 'Cobranças', calendario: 'Calendário',
+            relatorios: 'Relatórios', configuracoes: 'Configurações', perfil: 'Meu Perfil',
+            'editor-cores': 'Editor de Cores', perfilCliente: 'Perfil do Cliente', novoEmprestimo: 'Novo Empréstimo'
+        };
+
+        function showPage(pageName, triggerEvent) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
             document.getElementById(pageName).classList.remove('hidden');
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
 
-            // Apenas tenta ativar o nav-link se event está definido
-            if (event && event.target) {
-                const navLink = event.target.closest('.nav-link');
-                if (navLink) navLink.classList.add('active');
+            // Atualizar título do header
+            const headerH1 = document.querySelector('.header h1');
+            if (headerH1 && PAGE_TITLES[pageName]) headerH1.textContent = PAGE_TITLES[pageName];
+
+            // Marcar nav-link ativo via evento ou pelo nome da página
+            const ev = triggerEvent || (typeof event !== 'undefined' ? event : null);
+            if (ev && ev.target) {
+                const navLink = ev.target.closest('.nav-link');
+                if (navLink) { navLink.classList.add('active'); }
+                else {
+                    const match = document.querySelector(`.nav-link[onclick*="'${pageName}'"]`);
+                    if (match) match.classList.add('active');
+                }
+            } else {
+                const match = document.querySelector(`.nav-link[onclick*="'${pageName}'"]`);
+                if (match) match.classList.add('active');
             }
 
             if (pageName === 'clientes') {
@@ -3231,6 +3255,8 @@
                     document.getElementById('login-page').classList.add('hidden');
                     document.getElementById('app-page').classList.remove('hidden');
                     showPage('dashboard');
+                    updateDate();
+                    renderCalendar();
                     setTimeout(async function() {
                         await carregarDadosDoServidor(token);
                         atualizarEstatisticas();
@@ -3572,7 +3598,7 @@
                 const email = cliente?.email || '';
                 const tel = cliente?.whatsapp || cliente?.telefone || '';
                 html += `
-                    <div class="item-card" style="border-left: 4px solid #FF6B6B;">
+                    <div class="item-card" data-cliente="${escAttr(emp.cliente)}" style="border-left: 4px solid #FF6B6B;">
                         <div class="item-name">${emp.cliente} - R$ ${emp.valor}</div>
                         <div class="item-detail">Vencimento: ${emp.vencimento}</div>
                         <div class="item-detail">Dias em atraso: ${diasAtrasado}</div>
@@ -3990,7 +4016,7 @@
         }
 
         function filtrarPorLetra(letra) {
-            const items = document.querySelectorAll('#lista-clientes .item-card');
+            const items = document.querySelectorAll('#items-cobranca .item-card');
             const buttons = document.querySelectorAll('#filtro-alfabetico .btn-filter');
 
             buttons.forEach(btn => {
@@ -4005,10 +4031,9 @@
             }
 
             items.forEach(item => {
-                const nomeEl = item.querySelector('.item-name');
-                if (!nomeEl) return;
-                const primeiraLetra = nomeEl.textContent.charAt(0).toUpperCase();
-                item.style.display = (letra === 'TODOS' || primeiraLetra === letra) ? 'block' : 'none';
+                const cliente = item.getAttribute('data-cliente') || '';
+                const primeiraLetra = cliente.charAt(0).toUpperCase();
+                item.style.display = (letra === 'TODOS' || primeiraLetra === letra) ? '' : 'none';
             });
         }
 
