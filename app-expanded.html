@@ -2151,12 +2151,13 @@
             const hojeCharts = new Date(); hojeCharts.setHours(0, 0, 0, 0);
             const pagamentosMapChart = {};
             pagamentos.forEach(function(p) {
-                if (!pagamentosMapChart[p.emprestimo_id]) pagamentosMapChart[p.emprestimo_id] = 0;
-                pagamentosMapChart[p.emprestimo_id] += parseFloat(p.valor) || 0;
+                const key = String(p.emprestimo_id);
+                if (!pagamentosMapChart[key]) pagamentosMapChart[key] = 0;
+                pagamentosMapChart[key] += parseFloat(p.valor) || 0;
             });
             let pagosCount = 0, vencidosCount = 0;
             emprestimos.forEach(function(emp) {
-                const totalPago = pagamentosMapChart[emp.id] || 0;
+                const totalPago = pagamentosMapChart[String(emp.id)] || 0;
                 if (totalPago >= parseFloat(emp.valor || 0)) { pagosCount++; return; }
                 if (emp.vencimento) {
                     const v = new Date(emp.vencimento + 'T00:00:00');
@@ -2206,7 +2207,7 @@
                             borderRadius: 6
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0 } } }
                 });
             }
 
@@ -2258,7 +2259,7 @@
                             fill: true
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, min: 0 } } }
                 });
             }
 
@@ -2283,15 +2284,19 @@
                 charts.rentabilidade = new Chart(ctx6, {
                     type: 'bar',
                     data: {
-                        labels: clientesNomes.length > 0 ? clientesNomes : ['João Silva', 'Maria Santos', 'Pedro Costa'],
+                        labels: clientesNomes.length > 0 ? clientesNomes : ['Sem dados'],
                         datasets: [{
                             label: 'Empréstimos (R$)',
-                            data: clientesValues.length > 0 ? clientesValues : [50, 120, 160],
+                            data: clientesValues.length > 0 ? clientesValues : [0],
                             backgroundColor: '#2D9E7B',
                             borderRadius: 6
                         }]
                     },
-                    options: { responsive: true, maintainAspectRatio: false }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, min: 0 } }
+                    }
                 });
             }
             atualizarEstatisticas();
@@ -3221,7 +3226,11 @@
                     document.getElementById('login-page').classList.add('hidden');
                     document.getElementById('app-page').classList.remove('hidden');
                     showPage('dashboard');
-                    setTimeout(loadChartJS, 200);
+                    setTimeout(async function() {
+                        await carregarDadosDoServidor(token);
+                        atualizarEstatisticas();
+                        loadChartJS();
+                    }, 200);
                 }
             } catch(e) {}
         });
@@ -3275,8 +3284,8 @@
 
             // Buscar pagamentos reais deste cliente
             const pagamentosLS = JSON.parse(localStorage.getItem('pagamentos') || '[]');
-            const idsEmprestimosCliente = emprestimosCliente.map(function(e) { return e.id; });
-            const pagamentosCliente = pagamentosLS.filter(function(p) { return idsEmprestimosCliente.includes(p.emprestimo_id); });
+            const idsEmprestimosCliente = emprestimosCliente.map(function(e) { return String(e.id); });
+            const pagamentosCliente = pagamentosLS.filter(function(p) { return idsEmprestimosCliente.includes(String(p.emprestimo_id)); });
             const totalRecebido = pagamentosCliente.reduce(function(sum, p) { return sum + (parseFloat(p.valor) || 0); }, 0);
 
             let pagamentosHTML = '';
