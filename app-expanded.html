@@ -1966,7 +1966,7 @@
                 document.getElementById('app-page').classList.remove('hidden');
                 setTimeout(async () => {
                     await carregarDadosDoServidor(data.token);
-
+                    await sincronizarFotoDoServidor();
                     atualizarEstatisticas();
                     loadChartJS();
                 }, 100);
@@ -3176,6 +3176,22 @@
             }
         }
 
+        async function sincronizarFotoDoServidor() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const resp = await fetch('/perfil', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (!resp.ok) return;
+                const user = await resp.json();
+                if (user.foto_perfil) {
+                    localStorage.setItem('fotoPerfil', user.foto_perfil);
+                } else {
+                    localStorage.removeItem('fotoPerfil');
+                }
+                carregarFotoPerfil();
+            } catch(e) {}
+        }
+
         function fazerUploadFoto() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -3188,10 +3204,20 @@
                     return;
                 }
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = async (event) => {
                     const base64 = event.target.result;
                     localStorage.setItem('fotoPerfil', base64);
                     carregarFotoPerfil();
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        try {
+                            await fetch('/perfil', {
+                                method: 'PUT',
+                                headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ foto_perfil: base64 })
+                            });
+                        } catch(e) {}
+                    }
                     alert('✅ Foto de perfil atualizada com sucesso!');
                 };
                 reader.readAsDataURL(file);
@@ -3203,6 +3229,14 @@
             if (confirm('Deseja remover a foto de perfil?')) {
                 localStorage.removeItem('fotoPerfil');
                 carregarFotoPerfil();
+                const token = localStorage.getItem('token');
+                if (token) {
+                    fetch('/perfil', {
+                        method: 'PUT',
+                        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ foto_perfil: null })
+                    }).catch(() => {});
+                }
                 alert('✅ Foto removida com sucesso!');
             }
         }
@@ -4055,6 +4089,7 @@
             try { carregarNotificacoes(); } catch(e) {}
             try { carregarCores(); } catch(e) {}
             try { carregarFotoPerfil(); } catch(e) {}
+            try { sincronizarFotoDoServidor(); } catch(e) {}
             try { inicializarFiltroAlfabetico(); } catch(e) {}
             try { inicializarFiltroCalendario(); } catch(e) {}
 

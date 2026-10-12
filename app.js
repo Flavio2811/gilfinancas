@@ -45,6 +45,8 @@ async function initDB() {
       )
     `);
 
+    await client.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS foto_perfil TEXT`);
+
     const existing = await client.query(
       "SELECT id FROM usuarios WHERE email = $1",
       [ADMIN_EMAIL]
@@ -216,7 +218,7 @@ app.post("/auth/reset-password", async (req, res) => {
 app.get("/perfil", verifyToken, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, email, name, phone, email_recuperacao1, email_recuperacao2, phone_recuperacao, whatsapp_recuperacao FROM usuarios WHERE id = $1",
+      "SELECT id, email, name, phone, email_recuperacao1, email_recuperacao2, phone_recuperacao, whatsapp_recuperacao, foto_perfil FROM usuarios WHERE id = $1",
       [req.userId]
     );
     const user = result.rows[0];
@@ -230,17 +232,32 @@ app.get("/perfil", verifyToken, async (req, res) => {
 app.put("/perfil", verifyToken, async (req, res) => {
   try {
     const { name, phone, email_recuperacao1, email_recuperacao2, phone_recuperacao, whatsapp_recuperacao } = req.body;
-    await pool.query(
-      `UPDATE usuarios SET
-        name = COALESCE($1, name),
-        phone = COALESCE($2, phone),
-        email_recuperacao1 = COALESCE($3, email_recuperacao1),
-        email_recuperacao2 = COALESCE($4, email_recuperacao2),
-        phone_recuperacao = COALESCE($5, phone_recuperacao),
-        whatsapp_recuperacao = COALESCE($6, whatsapp_recuperacao)
-       WHERE id = $7`,
-      [name, phone, email_recuperacao1, email_recuperacao2, phone_recuperacao, whatsapp_recuperacao, req.userId]
-    );
+    if ('foto_perfil' in req.body) {
+      await pool.query(
+        `UPDATE usuarios SET
+          name = COALESCE($1, name),
+          phone = COALESCE($2, phone),
+          email_recuperacao1 = COALESCE($3, email_recuperacao1),
+          email_recuperacao2 = COALESCE($4, email_recuperacao2),
+          phone_recuperacao = COALESCE($5, phone_recuperacao),
+          whatsapp_recuperacao = COALESCE($6, whatsapp_recuperacao),
+          foto_perfil = $7
+         WHERE id = $8`,
+        [name, phone, email_recuperacao1, email_recuperacao2, phone_recuperacao, whatsapp_recuperacao, req.body.foto_perfil || null, req.userId]
+      );
+    } else {
+      await pool.query(
+        `UPDATE usuarios SET
+          name = COALESCE($1, name),
+          phone = COALESCE($2, phone),
+          email_recuperacao1 = COALESCE($3, email_recuperacao1),
+          email_recuperacao2 = COALESCE($4, email_recuperacao2),
+          phone_recuperacao = COALESCE($5, phone_recuperacao),
+          whatsapp_recuperacao = COALESCE($6, whatsapp_recuperacao)
+         WHERE id = $7`,
+        [name, phone, email_recuperacao1, email_recuperacao2, phone_recuperacao, whatsapp_recuperacao, req.userId]
+      );
+    }
     res.json({ message: "Perfil atualizado com sucesso" });
   } catch (error) {
     res.status(500).json({ error: error.message });
