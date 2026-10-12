@@ -2467,10 +2467,9 @@
             clientes.push(novoCliente);
             localStorage.setItem('clientes', JSON.stringify(clientes));
 
-            // Adicionar à lista de clientes dinamicamente
-            adicionarClienteAoLista(novoCliente);
-
-            // Atualizar gráficos e estatísticas
+            // Re-renderizar lista completa e atualizar tudo
+            renderizarClientes();
+            renderizarCobrancas();
             updateCharts();
             atualizarEstatisticas();
 
@@ -2544,6 +2543,7 @@
             updateCharts();
             atualizarEstatisticas();
             renderizarEmprestimos();
+            renderizarCobrancas();
 
             e.target.reset();
             document.getElementById('busca-cliente-emprestimo').value = '';
@@ -2782,7 +2782,10 @@
                 if (novosEmpCount > 0) {
                     localStorage.setItem('emprestimos', JSON.stringify(emprestimosAtuais));
                     renderizarEmprestimos();
+                }
+                if (novosCliCount > 0 || novosEmpCount > 0) {
                     atualizarEstatisticas();
+                    renderizarCobrancas();
                     if (typeof updateCharts === 'function') updateCharts();
                 }
 
@@ -2834,6 +2837,8 @@
                                 localStorage.setItem('pagamentos', JSON.stringify(pagAtuais));
                             }
                             atualizarEstatisticas();
+                            renderizarPagamentos();
+                            renderizarCobrancas();
                             if (typeof updateCharts === 'function') updateCharts();
                             var partes = [];
                             if (cliCount > 0) partes.push(cliCount + ' cliente(s)');
@@ -3376,6 +3381,7 @@
             updateCharts();
             atualizarEstatisticas();
             renderizarEmprestimos();
+            renderizarCobrancas();
 
             alert('✅ Empréstimo criado com sucesso!\n\nCliente: ' + novoEmprestimo.cliente + '\nValor: R$ ' + novoEmprestimo.valor + '\nTaxa: ' + novoEmprestimo.taxa + '% ao dia\nVencimento: ' + novoEmprestimo.vencimento);
 
