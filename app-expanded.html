@@ -3165,14 +3165,17 @@
             const fotaSalva = localStorage.getItem('fotoPerfil');
             const logoIcon = document.querySelector('.logo-icon');
             const profileAvatar = document.getElementById('profile-avatar');
+            const avatarInitials = document.getElementById('avatar-initials');
             if (fotaSalva) {
                 if (logoIcon) logoIcon.innerHTML = `<img src="${fotaSalva}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">`;
                 if (profileAvatar) profileAvatar.innerHTML = `<img src="${fotaSalva}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+                if (avatarInitials) avatarInitials.innerHTML = `<img src="${fotaSalva}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
             } else {
                 if (logoIcon) logoIcon.textContent = 'G';
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 const initials = (user.name || 'GF').split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().substring(0, 2);
                 if (profileAvatar) profileAvatar.textContent = initials;
+                if (avatarInitials) avatarInitials.textContent = initials;
             }
         }
 
