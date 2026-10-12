@@ -6,12 +6,13 @@ const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "seu_secret_key_super_seguro_2026";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "gilfinancas@2024";
 
 let usuarios = [
   {
     id: 1,
     email: "flavio.guerreiro.da.esperanca@gmail.com",
-    password_hash: bcryptjs.hashSync("gilfinancas@2024", 8),
+    password_hash: bcryptjs.hashSync(ADMIN_PASSWORD, 8),
     name: "Flavio Guerreiro",
     phone: "(11) 9 9999-8888",
     email_recuperacao1: "flavio.recuperacao1@gmail.com",
