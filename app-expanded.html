@@ -2774,7 +2774,7 @@
                                 tipo: idx.tipo >= 0 ? (c[idx.tipo] || 'simples').toLowerCase() : 'simples',
                                 vencimento: idx.vencimento >= 0 ? c[idx.vencimento] : '',
                                 data: idx.data >= 0 ? c[idx.data] : new Date().toISOString().split('T')[0],
-                                juros_acumulados: 0
+                                jurosAcumulados: '0.00'
                             });
                         }
                     }
