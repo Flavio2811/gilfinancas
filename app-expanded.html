@@ -794,13 +794,37 @@
                 width: 100%;
                 height: auto;
                 position: relative;
+                padding: 12px 0 0;
             }
+            .sidebar .logo { display: none; }
+            .sidebar .menu-section-title { display: none; }
+            .sidebar nav, .sidebar .nav-menu {
+                display: flex;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 0 8px 8px;
+                gap: 4px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .sidebar .nav-menu li { list-style: none; white-space: nowrap; }
+            .sidebar .nav-link {
+                padding: 8px 12px !important;
+                font-size: 12px !important;
+                border-radius: 20px !important;
+                white-space: nowrap;
+            }
+            .sidebar .user-section { display: none; }
             .main {
                 margin-left: 0;
             }
-            .stats-grid, .items-grid {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .items-grid {
                 grid-template-columns: 1fr;
             }
+            .form-card { padding: 16px; }
+            .content { padding: 16px; }
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -2002,6 +2026,10 @@
             }
         }
 
+        function escAttr(v) {
+            return String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
         function showPage(pageName) {
             document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
             document.getElementById(pageName).classList.remove('hidden');
@@ -2619,10 +2647,11 @@
                 return `<tr><td>${emp.cliente}</td><td>R$ ${emp.valor}</td><td>${taxa}%</td><td>${venc}</td><td>R$ ${emp.jurosAcumulados || '0.00'}</td></tr>`;
             }).join('');
             const html = `<html><head><title>Relatório de Empréstimos</title><style>body{font-family:Arial,sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background:#1b7f5e;color:white;}h1{color:#1b7f5e;}</style></head><body><h1>Relatório de Empréstimos</h1><p>Gerado em: ${new Date().toLocaleDateString('pt-BR')}</p><table><thead><tr><th>Cliente</th><th>Valor</th><th>Taxa</th><th>Vencimento</th><th>Juros Acumulados</th></tr></thead><tbody>${linhas}</tbody></table></body></html>`;
-            const win = window.open('', '_blank');
-            win.document.write(html);
-            win.document.close();
-            win.print();
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'relatorio_emprestimos_' + new Date().toISOString().split('T')[0] + '.html';
+            link.click();
         }
 
         function parseCSVLine(line) {
@@ -3088,8 +3117,11 @@
         }
 
         function resetData() {
-            if (confirm('⚠️ Tem certeza? Todos os dados serão deletados!')) {
-                alert('✓ Dados resetados. Página será recarregada...');
+            if (confirm('⚠️ Tem certeza? Todos os dados (clientes, empréstimos e pagamentos) serão deletados permanentemente!')) {
+                ['clientes', 'emprestimos', 'pagamentos', 'config-empresa', 'fotoPerfil', 'coresPersonalizadas', 'notificacoes', 'agendamentos'].forEach(function(k) {
+                    localStorage.removeItem(k);
+                });
+                alert('✓ Todos os dados foram apagados.');
                 location.reload();
             }
         }
@@ -3409,7 +3441,7 @@
                 const tipoJuros = tipoRaw ? tipoRaw.charAt(0).toUpperCase() + tipoRaw.slice(1) : 'Não especificado';
 
                 html += `
-                    <div class="item-card" style="cursor: pointer;" onclick="abrirPerfilCliente('${emp.cliente}', '${clienteEmail}', '${clienteTelefone}', '${clienteWhatsapp}')">
+                    <div class="item-card" style="cursor: pointer;" onclick="abrirPerfilCliente('${escAttr(emp.cliente)}', '${escAttr(clienteEmail)}', '${escAttr(clienteTelefone)}', '${escAttr(clienteWhatsapp)}')">
                         <div class="item-name">${emp.cliente} - R$ ${parseFloat(emp.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
                         <div class="item-detail">Taxa: ${taxa}% ao dia (${tipoJuros})</div>
                         <div class="item-detail">Pago: R$ ${totalPago.toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${valorEmp.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
@@ -3439,7 +3471,7 @@
                     ? '<span class="badge badge-danger">✗ Inativo</span>'
                     : '<span class="badge badge-success">✓ Ativo</span>';
                 html += `
-                    <div class="item-card cliente-item" data-nome="${cliente.nome}" data-email="${cliente.email || ''}" data-telefone="${cliente.telefone || ''}" onclick="abrirPerfilCliente('${cliente.nome}', '${cliente.email || ''}', '${cliente.telefone || ''}', '${cliente.whatsapp || ''}')" style="cursor: pointer;">
+                    <div class="item-card cliente-item" data-nome="${escAttr(cliente.nome)}" data-email="${escAttr(cliente.email)}" data-telefone="${escAttr(cliente.telefone)}" onclick="abrirPerfilCliente('${escAttr(cliente.nome)}', '${escAttr(cliente.email)}', '${escAttr(cliente.telefone)}', '${escAttr(cliente.whatsapp)}')" style="cursor: pointer;">
                         <div class="item-name">${cliente.nome}</div>
                         <div class="item-detail">📧 ${cliente.email || 'N/A'}</div>
                         <div class="item-detail">📱 ${cliente.telefone || 'N/A'}</div>
@@ -3531,8 +3563,8 @@
                         <div class="item-detail">Dias em atraso: ${diasAtrasado}</div>
                         <span class="badge badge-danger">⚠️ Atrasado</span>
                         ${email || tel ? `<div style="margin-top:10px;display:flex;gap:8px;">
-                            ${email ? `<button class="btn-small" onclick="enviarEmail('${emp.cliente}','${email}')">📧 Email</button>` : ''}
-                            ${tel ? `<button class="btn-small" onclick="enviarWhatsApp('${emp.cliente}','${tel}')">💬 WhatsApp</button>` : ''}
+                            ${email ? `<button class="btn-small" onclick="enviarEmail('${escAttr(emp.cliente)}','${escAttr(email)}')">📧 Email</button>` : ''}
+                            ${tel ? `<button class="btn-small" onclick="enviarWhatsApp('${escAttr(emp.cliente)}','${escAttr(tel)}')">💬 WhatsApp</button>` : ''}
                         </div>` : ''}
                     </div>
                 `;
@@ -3578,7 +3610,7 @@
                     <div style="padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;"
                          onmouseover="this.style.background='var(--bg-gray)'"
                          onmouseout="this.style.background='white'"
-                         onclick="selecionarClienteEmprestimo('${cliente.nome}', '${cliente.email}', '${cliente.telefone}')">
+                         onclick="selecionarClienteEmprestimo('${escAttr(cliente.nome)}', '${escAttr(cliente.email)}', '${escAttr(cliente.telefone)}')">
                         <div style="font-weight: 600; color: var(--text-primary);">${cliente.nome}</div>
                         <div style="font-size: 12px; color: var(--text-secondary);">${cliente.email} | ${cliente.telefone}</div>
                     </div>
@@ -3636,7 +3668,7 @@
                     <div style="padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s;"
                          onmouseover="this.style.background='var(--bg-gray)'"
                          onmouseout="this.style.background='white'"
-                         onclick="selecionarEmprestimoPagamento('${emp.cliente} - R$ ${emp.valor} (${empTaxa}% a.d.)', '${emp.id || ''}')">
+                         onclick="selecionarEmprestimoPagamento('${escAttr(emp.cliente + ' - R$ ' + emp.valor + ' (' + empTaxa + '% a.d.)')}', '${escAttr(emp.id || '')}')">
                         <div style="font-weight: 600; color: var(--text-primary);">${emp.cliente} - R$ ${emp.valor}</div>
                         <div style="font-size: 12px; color: var(--text-secondary);">Taxa: ${empTaxa}% ao dia | Vencimento: ${empVenc}</div>
                     </div>
